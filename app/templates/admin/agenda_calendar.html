@@ -17,7 +17,7 @@
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <a
-          href="{{ url_for('admin.agenda_list', year=prev_y, month=prev_m, selected=nav_sel_prev) }}"
+          href="{{ url_for('admin.agenda_list', year=prev_y, month=prev_m, selected=nav_sel_prev, **admin_nav_kw) }}"
           class="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-bold text-slate-700 hover:bg-white hover:border-indigo-300 hover:text-indigo-700 min-h-[44px] inline-flex items-center shadow-sm transition"
           title="Mês anterior"
           aria-label="Mês anterior"
@@ -25,17 +25,19 @@
         >
         <span class="font-bold text-slate-900 px-2 min-w-[11rem] text-center text-lg">{{ month_label }}</span>
         <a
-          href="{{ url_for('admin.agenda_list', year=next_y, month=next_m, selected=nav_sel_next) }}"
+          href="{{ url_for('admin.agenda_list', year=next_y, month=next_m, selected=nav_sel_next, **admin_nav_kw) }}"
           class="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-bold text-slate-700 hover:bg-white hover:border-indigo-300 hover:text-indigo-700 min-h-[44px] inline-flex items-center shadow-sm transition"
           title="Próximo mês"
           aria-label="Próximo mês"
           >→</a
         >
+        {% if admin_panel.can_write_agenda %}
         <a
-          href="{{ url_for('admin.agenda_new', date=selected_iso) }}"
+          href="{{ url_for('admin.agenda_new', date=selected_iso, **admin_nav_kw) }}"
           class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-2.5 text-sm font-semibold hover:from-indigo-500 hover:to-violet-500 min-h-[44px] inline-flex items-center shadow-md shadow-indigo-500/30 transition"
           >+ Novo neste dia</a
         >
+        {% endif %}
       </div>
     </div>
   </div>
@@ -64,7 +66,7 @@
         {% set is_today = dkey == today_iso %}
         {% set n_events = (events_by_date[dkey] | length) if dkey in events_by_date else 0 %}
         <a
-          href="{{ url_for('admin.agenda_list', year=year, month=month, selected=dkey) }}"
+          href="{{ url_for('admin.agenda_list', year=year, month=month, selected=dkey, **admin_nav_kw) }}"
           class="group relative min-h-[4.5rem] sm:min-h-[5.25rem] rounded-xl border-2 p-2 sm:p-2.5 flex flex-col transition-all duration-200 {% if is_sel %}border-indigo-500 bg-gradient-to-b from-indigo-50 to-white shadow-md shadow-indigo-500/15 ring-2 ring-indigo-400/40 z-[1]{% elif is_today %}border-amber-300 bg-amber-50/50 hover:border-amber-400{% else %}border-slate-200/90 bg-white hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-500/10{% endif %}"
           title="Ver compromissos de {{ dkey }}"
           aria-label="Dia {{ day }}{% if n_events %}, {{ n_events }} evento(s){% endif %}"
@@ -108,12 +110,14 @@
     <p class="text-sm text-slate-600 mt-2">
       Compromissos e descrições do dia. Para outro dia, clique na data no calendário acima.
     </p>
+    {% if admin_panel.can_write_agenda %}
     <a
-      href="{{ url_for('admin.agenda_new', date=selected_iso) }}"
+      href="{{ url_for('admin.agenda_new', date=selected_iso, **admin_nav_kw) }}"
       class="inline-flex mt-4 items-center gap-2 rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold hover:bg-indigo-500 transition shadow-md shadow-indigo-500/25"
     >
       + Adicionar compromisso nesta data
     </a>
+    {% endif %}
   </div>
   <div class="p-5 sm:p-8 space-y-4">
     {% for ev in day_events %}
@@ -137,10 +141,15 @@
             </p>
           </div>
           <div class="flex gap-3 text-sm shrink-0">
-            <a href="{{ url_for('admin.agenda_edit', eid=ev.id) }}" class="ui-btn ui-btn--sm ui-btn--accent-violet">Editar</a>
+            {% if admin_panel.can_write_agenda %}
+            <a href="{{ url_for('admin.agenda_edit', eid=ev.id, **admin_nav_kw) }}" class="ui-btn ui-btn--sm ui-btn--accent-violet">Editar</a>
             <form method="post" action="{{ url_for('admin.agenda_delete', eid=ev.id) }}" class="inline" onsubmit="return confirm('Excluir este evento?');">
+              {% if request.args.get('clube_id') %}
+              <input type="hidden" name="clube_id" value="{{ request.args.get('clube_id') }}" />
+              {% endif %}
               <button type="submit" class="ui-btn ui-btn--sm ui-btn--danger-soft">Excluir</button>
             </form>
+            {% endif %}
           </div>
         </div>
         {% if ev.body %}
@@ -148,14 +157,14 @@
           {{ ev.body }}
         </div>
         {% else %}
-        <p class="mt-4 text-sm text-slate-400 italic">Sem descrição. Use <strong>Editar</strong> para detalhar o compromisso.</p>
+        <p class="mt-4 text-sm text-slate-400 italic">Sem descrição.{% if admin_panel.can_write_agenda %} Use <strong>Editar</strong> para detalhar o compromisso.{% endif %}</p>
         {% endif %}
       </div>
     </article>
     {% else %}
     <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center">
       <p class="text-slate-600 font-medium">Nenhum compromisso em {{ selected_day.strftime('%d/%m/%Y') }}.</p>
-      <p class="text-slate-500 text-sm mt-2">Escolha outro dia no calendário ou clique em <strong>+ Adicionar compromisso nesta data</strong>.</p>
+      <p class="text-slate-500 text-sm mt-2">Escolha outro dia no calendário{% if admin_panel.can_write_agenda %} ou clique em <strong>+ Adicionar compromisso nesta data</strong>{% endif %}.</p>
     </div>
     {% endfor %}
   </div>

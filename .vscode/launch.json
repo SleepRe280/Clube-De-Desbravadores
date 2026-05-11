@@ -1,15 +1,25 @@
 {
+    // Variáveis locais: ficheiro .env na raiz (ignorado pelo Git). Ver .env.example.
+    // Ao dar F5, o browser abre a URL exata que o run.py imprime (serverReadyAction).
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "name": "Python: Flask (run.py)",
+            "type": "debugpy",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "http://localhost:8080",
-            "webRoot": "${workspaceFolder}"
+            "program": "${workspaceFolder}/run.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "Servidor local: (https?://[^\\s]+)",
+                "uriFormat": "%s",
+                "killOnServerStop": false
+            }
         }
     ]
 }

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from datetime import date, datetime
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
@@ -13,8 +12,9 @@ from app.agenda_calendar_util import (
     agenda_sort_day_events,
     agenda_weeks,
 )
-from app.auth import parent_required
-from sqlalchemy import func
+from app.access import parent_area_required
+from app.club_services import get_pix_for_club
+from sqlalchemy import and_, false, func, or_
 
 from app.extensions import db
 from app.finance_util import format_brl_cents
@@ -23,13 +23,12 @@ from app.models import (
     AgendaEvent,
     Attendance,
     BoardPost,
-    ClubNews,
-    CLUB_SETTING_PIX_KEY,
     DirectorateMember,
     MeetingDuque,
     Member,
     MemberFee,
-    get_club_setting_value,
+    POST_KIND_COMUNICADO,
+    POST_KIND_NOTICIA,
 )
 
 bp = Blueprint("parent", __name__)
@@ -49,7 +48,7 @@ NEWS_LABELS = {
 
 @bp.before_request
 @login_required
-@parent_required
+@parent_area_required
 def _parent_guard():
     pass
 
@@ -67,11 +66,16 @@ def home():
             .all()
         )
         duques_by_member = {mid: int(t or 0) for mid, t in q}
-    board_posts = BoardPost.query.order_by(BoardPost.created_at.desc()).limit(12).all()
-    news_items = ClubNews.query.order_by(ClubNews.created_at.desc()).limit(20).all()
-    news_by_level = defaultdict(list)
-    for n in news_items:
-        news_by_level[n.level].append(n)
+    club_ids = {c.clube_id for c in children if getattr(c, "clube_id", None)}
+    if club_ids:
+        feed_posts = (
+            BoardPost.query.filter(BoardPost.clube_id.in_(club_ids))
+            .order_by(BoardPost.created_at.desc())
+            .limit(24)
+            .all()
+        )
+    else:
+        feed_posts = []
 
     primary_child = children[0] if children else None
     recent_activity = None
@@ -101,9 +105,10 @@ def home():
         children=children,
         primary_child=primary_child,
         duques_by_member=duques_by_member,
-        board_posts=board_posts,
-        news_by_level=dict(news_by_level),
+        feed_posts=feed_posts,
         news_labels=NEWS_LABELS,
+        post_kind_comunicado=POST_KIND_COMUNICADO,
+        post_kind_noticia=POST_KIND_NOTICIA,
         recent_activity=recent_activity,
         last_duques_delta=last_duques_delta,
         greeting_first=greeting_first,
@@ -127,13 +132,14 @@ def parent_agenda():
     selected_day = agenda_resolve_selected_day(year, month, sel_raw, today)
 
     start, end = agenda_month_bounds(year, month)
-    month_events = (
-        AgendaEvent.query.filter(
-            AgendaEvent.event_date >= start, AgendaEvent.event_date <= end
-        )
-        .order_by(AgendaEvent.event_date.asc(), AgendaEvent.id.asc())
-        .all()
-    )
+    children = list(current_user.children)
+    club_ids = {c.clube_id for c in children if getattr(c, "clube_id", None)}
+    aq = AgendaEvent.query.filter(AgendaEvent.event_date >= start, AgendaEvent.event_date <= end)
+    if club_ids:
+        aq = aq.filter(AgendaEvent.clube_id.in_(club_ids))
+    else:
+        aq = aq.filter(AgendaEvent.id == -1)
+    month_events = aq.order_by(AgendaEvent.event_date.asc(), AgendaEvent.id.asc()).all()
     events_by_date = {}
     for ev in month_events:
         key = ev.event_date.isoformat()
@@ -169,15 +175,27 @@ def parent_agenda():
 
 @bp.route("/clube/membros")
 def club_directory():
-    members = Member.query.order_by(Member.full_name).all()
+    children = list(current_user.children)
+    club_ids = {c.clube_id for c in children if getattr(c, "clube_id", None)}
+    mq = Member.query
+    if club_ids:
+        mq = mq.filter(Member.clube_id.in_(club_ids))
+    else:
+        mq = mq.filter(Member.id == -1)
+    members = mq.order_by(Member.full_name).all()
     return render_template("parent/club_directory.html", members=members)
 
 
 @bp.route("/clube/diretoria")
 def club_directorate():
-    team = DirectorateMember.query.order_by(
-        DirectorateMember.display_order, DirectorateMember.full_name
-    ).all()
+    children = list(current_user.children)
+    club_ids = {c.clube_id for c in children if getattr(c, "clube_id", None)}
+    dq = DirectorateMember.query
+    if club_ids:
+        dq = dq.filter(DirectorateMember.clube_id.in_(club_ids))
+    else:
+        dq = dq.filter(DirectorateMember.id == -1)
+    team = dq.order_by(DirectorateMember.display_order, DirectorateMember.full_name).all()
     return render_template("parent/club_directorate.html", team=team)
 
 
@@ -188,46 +206,52 @@ def news_feed():
     active_level = level if level in NEWS_LABELS else None
     active_type = tipo if tipo in {"todos", "avisos", "noticias"} else "todos"
 
-    posts = []
-    if active_type in {"todos", "avisos"}:
-        posts = BoardPost.query.order_by(BoardPost.created_at.desc()).limit(60).all()
+    children = list(current_user.children)
+    club_ids = {c.clube_id for c in children if getattr(c, "clube_id", None)}
+    q = BoardPost.query
+    if club_ids:
+        q = q.filter(BoardPost.clube_id.in_(club_ids))
+    else:
+        q = q.filter(false())
 
-    news_query = ClubNews.query.order_by(ClubNews.created_at.desc())
-    if active_level:
-        news_query = news_query.filter_by(level=active_level)
-    news_items = news_query.limit(80).all() if active_type in {"todos", "noticias"} else []
+    if active_type == "avisos":
+        q = q.filter(BoardPost.post_kind == POST_KIND_COMUNICADO)
+    elif active_type == "noticias":
+        q = q.filter(BoardPost.post_kind == POST_KIND_NOTICIA)
+    else:
+        # todos
+        if active_level:
+            q = q.filter(
+                or_(
+                    BoardPost.post_kind == POST_KIND_COMUNICADO,
+                    and_(
+                        BoardPost.post_kind == POST_KIND_NOTICIA,
+                        BoardPost.level == active_level,
+                    ),
+                )
+            )
+    if active_type == "noticias" and active_level:
+        q = q.filter(BoardPost.level == active_level)
+
+    rows = q.order_by(BoardPost.created_at.desc()).limit(80).all()
 
     merged_items = []
-    for p in posts:
+    for p in rows:
+        if p.post_kind == POST_KIND_NOTICIA:
+            label = NEWS_LABELS.get(p.level or "local", "Notícia")
+        else:
+            label = "Comunicado"
         merged_items.append(
             {
-                "kind": "post",
+                "post_kind": p.post_kind,
                 "title": p.title,
                 "body": p.body,
                 "created_at": p.created_at,
-                "label": "Aviso do clube",
-                "level": None,
-                "image_filename": None,
+                "label": label,
+                "level": p.level,
+                "image_filename": p.image_filename,
             }
         )
-    for n in news_items:
-        merged_items.append(
-            {
-                "kind": "news",
-                "title": n.title,
-                "body": n.body,
-                "created_at": n.created_at,
-                "label": NEWS_LABELS.get(n.level, "Notícia"),
-                "level": n.level,
-                "image_filename": n.image_filename,
-            }
-        )
-
-    merged_items.sort(
-        key=lambda item: item["created_at"] or datetime.min,
-        reverse=True,
-    )
-    merged_items = merged_items[:80]
 
     return render_template(
         "parent/news_feed.html",
@@ -238,8 +262,17 @@ def news_feed():
     )
 
 
-@bp.route("/conta")
+@bp.route("/conta", methods=["GET", "POST"])
 def account():
+    from app.auth import _ensure_profile_for_user
+
+    _ensure_profile_for_user(current_user)
+    db.session.commit()
+    if request.method == "POST":
+        from app.auth import process_account_form
+
+        process_account_form()
+        return redirect(url_for("parent.account"))
     return render_template("parent/account.html")
 
 
@@ -247,7 +280,12 @@ def account():
 def parent_finance():
     children = list(current_user.children)
     by_member = {c.id: c for c in children}
-    pix_key = get_club_setting_value(CLUB_SETTING_PIX_KEY)
+    cid = None
+    if children and getattr(children[0], "clube_id", None):
+        cid = children[0].clube_id
+    elif getattr(current_user, "perfil", None) and current_user.perfil.clube_id:
+        cid = current_user.perfil.clube_id
+    pix_key = get_pix_for_club(cid) if cid else ""
     if not children:
         return render_template(
             "parent/finance.html",

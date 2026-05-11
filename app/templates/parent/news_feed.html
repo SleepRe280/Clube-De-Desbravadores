@@ -19,7 +19,7 @@
   <article class="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
     <div class="px-4 py-2 bg-slate-50 border-b border-slate-100">
       <span
-        class="text-[10px] font-bold uppercase tracking-wide {% if n.kind == 'post' %}text-amber-700{% elif n.level == 'mundial' %}text-indigo-600{% elif n.level == 'estadual' %}text-blue-600{% elif n.level == 'regional' %}text-green-600{% else %}text-amber-700{% endif %}"
+        class="text-[10px] font-bold uppercase tracking-wide {% if n.post_kind == 'comunicado' %}text-amber-700{% elif n.level == 'mundial' %}text-indigo-600{% elif n.level == 'estadual' %}text-blue-600{% elif n.level == 'regional' %}text-green-600{% else %}text-amber-700{% endif %}"
         >{{ n.label }}</span
       >
     </div>

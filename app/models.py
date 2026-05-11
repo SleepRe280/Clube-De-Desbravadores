@@ -1,10 +1,22 @@
 import json
 from datetime import date, datetime
+import uuid
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
+
+CARGO_SUPER_ADMIN = "super_admin"
+CARGO_DIRETOR = "diretor"
+CARGO_TESOUREIRO = "tesoureiro"
+CARGO_SECRETARIO = "secretario"
+CARGO_CONSELHEIRO = "conselheiro"
+CARGO_PAI = "pai"
+
+# Publicações unificadas (mural dos responsáveis)
+POST_KIND_COMUNICADO = "comunicado"
+POST_KIND_NOTICIA = "noticia"
 
 
 class User(db.Model, UserMixin):
@@ -35,6 +47,42 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
 
 
+class Club(db.Model):
+    """Cadastro de clubes (multi-clube) e identidade visual por clube."""
+
+    __tablename__ = "clubes"
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    nome = db.Column(db.String(160), nullable=False, index=True)
+    descricao = db.Column(db.Text, nullable=True)
+    brasao_url = db.Column(db.String(500), nullable=True)
+    cor_primaria = db.Column(db.String(20), nullable=True)
+    cor_secundaria = db.Column(db.String(20), nullable=True)
+    cor_accent = db.Column(db.String(20), nullable=True)
+    cidade = db.Column(db.String(120), nullable=True)
+    regiao = db.Column(db.String(120), nullable=True)
+    titulo_sistema = db.Column(db.String(160), nullable=True)
+    template_slug = db.Column(db.String(40), nullable=False, default="duque_de_caxias")
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    perfis = db.relationship("Profile", back_populates="clube", lazy="dynamic")
+
+
+class Profile(db.Model):
+    """Perfil de acesso por usuário (cargo + vínculo de clube)."""
+
+    __tablename__ = "perfis"
+    id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+    nome_completo = db.Column(db.String(160), nullable=True)
+    cargo = db.Column(db.String(40), nullable=False, default=CARGO_PAI, index=True)
+    cargos_json = db.Column(db.Text, nullable=True)
+    clube_id = db.Column(db.String(36), db.ForeignKey("clubes.id"), nullable=True, index=True)
+    email_verificado = db.Column(db.Boolean, default=False, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("perfil", uselist=False))
+    clube = db.relationship("Club", back_populates="perfis")
+
+
 class PasswordResetToken(db.Model):
     __tablename__ = "password_reset_tokens"
     id = db.Column(db.Integer, primary_key=True)
@@ -47,6 +95,7 @@ class PasswordResetToken(db.Model):
 class Member(db.Model):
     __tablename__ = "members"
     id = db.Column(db.Integer, primary_key=True)
+    clube_id = db.Column(db.String(36), db.ForeignKey("clubes.id"), nullable=True, index=True)
     full_name = db.Column(db.String(120), nullable=False)
     unit = db.Column(db.String(60), nullable=True)
     birth_date = db.Column(db.Date, nullable=True)
@@ -153,6 +202,7 @@ class AgendaEvent(db.Model):
 
     __tablename__ = "agenda_events"
     id = db.Column(db.Integer, primary_key=True)
+    clube_id = db.Column(db.String(36), db.ForeignKey("clubes.id"), nullable=True, index=True)
     title = db.Column(db.String(200), nullable=False)
     body = db.Column(db.Text, nullable=True)
     event_date = db.Column(db.Date, nullable=False, index=True)
@@ -165,6 +215,7 @@ class DirectorateMember(db.Model):
 
     __tablename__ = "directorate_members"
     id = db.Column(db.Integer, primary_key=True)
+    clube_id = db.Column(db.String(36), db.ForeignKey("clubes.id"), nullable=True, index=True)
     full_name = db.Column(db.String(120), nullable=False)
     cargo = db.Column(db.String(120), nullable=False)
     photo_filename = db.Column(db.String(200), nullable=True)
@@ -173,17 +224,6 @@ class DirectorateMember(db.Model):
     bio = db.Column(db.Text, nullable=True)
     display_order = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-class ClubNews(db.Model):
-    __tablename__ = "club_news"
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    level = db.Column(db.String(20), nullable=False, index=True)
-    image_filename = db.Column(db.String(200), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
 
 class ActivityRecord(db.Model):
@@ -222,8 +262,14 @@ class Attendance(db.Model):
 class BoardPost(db.Model):
     __tablename__ = "board_posts"
     id = db.Column(db.Integer, primary_key=True)
+    clube_id = db.Column(db.String(36), db.ForeignKey("clubes.id"), nullable=True, index=True)
     title = db.Column(db.String(200), nullable=False)
     body = db.Column(db.Text, nullable=False)
+    post_kind = db.Column(
+        db.String(20), nullable=False, default=POST_KIND_COMUNICADO, index=True
+    )
+    level = db.Column(db.String(20), nullable=True, index=True)
+    image_filename = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
@@ -233,6 +279,7 @@ class FinanceLedgerEntry(db.Model):
 
     __tablename__ = "finance_ledger"
     id = db.Column(db.Integer, primary_key=True)
+    clube_id = db.Column(db.String(36), db.ForeignKey("clubes.id"), nullable=True, index=True)
     occurred_at = db.Column(db.Date, nullable=False, index=True)
     direction = db.Column(db.String(16), nullable=False)  # income | expense
     amount_cents = db.Column(db.Integer, nullable=False)

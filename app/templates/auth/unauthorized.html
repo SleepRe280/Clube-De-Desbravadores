@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acesso não autorizado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+  </head>
+  <body class="min-h-screen bg-slate-100 p-6">
+    <div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-8">
+      <h1 class="text-2xl font-bold text-slate-900">Acesso não autorizado</h1>
+      <p class="mt-3 text-slate-600">Você não tem permissão para acessar esta área com o cargo atual.</p>
+      <a href="{{ url_for('index') }}" class="ui-btn ui-btn--brand mt-5 inline-flex">Voltar para o início</a>
+    </div>
+  </body>
+</html>

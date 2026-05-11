@@ -22,57 +22,77 @@
       }
     </style>
   </head>
-  <body class="p-4 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-    <div class="max-w-md mx-auto pt-4 sm:pt-6">
-      <a href="{{ url_for('auth.login') }}" class="text-[#0277bd] text-sm font-semibold hover:underline">← Login</a>
-      <h1 class="text-2xl font-bold mt-6 text-[var(--text-primary)]">Criar conta de responsável</h1>
-      <p class="text-[var(--text-secondary)] text-sm mt-2">
-        Após registrar, você já poderá <strong>entrar no portal</strong> com e-mail e senha. A diretoria associa seu
-        filho à conta ao cadastrar o desbravador.
-      </p>
-      <div
-        data-auth-panel
-        class="mt-6 bg-white rounded-3xl border border-[var(--border-pastel)] shadow-[var(--shadow-card)] p-6 sm:p-8"
+  <body class="min-h-screen min-h-[100dvh] bg-[#003580] text-white">
+    <main class="min-h-screen grid lg:grid-cols-2">
+      <section
+        class="hidden lg:flex items-end p-10 bg-cover bg-center relative"
+        style="background-image: linear-gradient(180deg, rgba(0,53,128,0.15) 0%, rgba(0,53,128,0.75) 100%), url('{{ url_for('static', filename='img/login-nature.jpg') }}');"
       >
-        {% include "partials/flash.html" %}
-        <form method="post" class="space-y-4">
-          <div>
-            <label class="block text-sm text-[var(--text-secondary)] mb-1">Nome</label>
-            <input name="full_name" required class="w-full rounded-2xl border border-[var(--border-pastel)] px-4 py-3 bg-[#fafafa]" />
-          </div>
-          <div>
-            <label class="block text-sm text-[var(--text-secondary)] mb-1">E-mail</label>
-            <input name="email" type="email" required class="w-full rounded-2xl border border-[var(--border-pastel)] px-4 py-3 bg-[#fafafa]" />
-          </div>
-          <div>
-            <label class="block text-sm text-[var(--text-secondary)] mb-1">Senha (mín. 6)</label>
-            <div class="relative">
-              <input
-                id="reg-password"
-                name="password"
-                type="password"
-                required
-                minlength="6"
-                class="w-full rounded-2xl border border-[var(--border-pastel)] pl-4 pr-14 py-3 bg-[#fafafa]"
-              />
-              <button
-                type="button"
-                id="reg-toggle-pw"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--text-secondary)] px-2 py-1 rounded-xl hover:bg-[#e8f5e9]"
-              >
-                Ver
+        <div class="max-w-xl">
+          <p class="text-sm uppercase tracking-[0.2em] text-yellow-300 font-semibold">Clube de Desbravadores</p>
+          <h2 class="mt-3 text-3xl font-bold leading-tight">"Ninguém despreze a tua mocidade..."</h2>
+          <p class="mt-2 text-white/90">1 Timóteo 4:12 - exemplo dos fiéis no amor e no serviço.</p>
+        </div>
+      </section>
+      <section class="flex items-center justify-center px-4 py-8">
+        <div class="w-full max-w-lg">
+          <a href="{{ url_for('auth.login') }}" class="text-yellow-300 text-sm font-semibold hover:underline">← Voltar para login</a>
+          <h1 class="text-2xl font-bold mt-5 text-white">Criar conta</h1>
+          <p class="text-white/85 text-sm mt-2">Login único para todos os perfis. Escolha seu clube e registre seu acesso.</p>
+          <div class="mt-6 bg-white rounded-3xl border-2 border-[#FFD700] shadow-2xl p-6 sm:p-8 text-slate-900">
+            {% include "partials/flash.html" %}
+            <form method="post" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <div>
+                <label class="block text-sm text-slate-600 mb-1">Nome</label>
+                <input name="full_name" required class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white" />
+              </div>
+              <div>
+                <label class="block text-sm text-slate-600 mb-1">E-mail</label>
+                <input name="email" type="email" required class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white" />
+              </div>
+              <div>
+                <label class="block text-sm text-slate-600 mb-1">Clube</label>
+                <select name="clube_id" required class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-white">
+                  <option value="">Selecione o clube</option>
+                  {% for clube in clubes %}
+                  <option value="{{ clube.id }}">{{ clube.nome }}</option>
+                  {% endfor %}
+                </select>
+                <p class="text-xs text-slate-500 mt-1">No momento, cadastro liberado somente para o Clube Duque de Caxias.</p>
+              </div>
+              <div>
+                <label class="block text-sm text-slate-600 mb-1">Senha (mín. 6)</label>
+                <div class="relative">
+                  <input
+                    id="reg-password"
+                    name="password"
+                    type="password"
+                    required
+                    minlength="6"
+                    class="w-full rounded-2xl border border-slate-300 pl-4 pr-14 py-3 bg-white"
+                  />
+                  <button
+                    type="button"
+                    id="reg-toggle-pw"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-600 px-2 py-1 rounded-xl hover:bg-slate-100"
+                  >
+                    Ver
+                  </button>
+                </div>
+              </div>
+              <label class="flex items-start gap-2 text-sm text-slate-700">
+                <input type="checkbox" name="allow_transfer" value="1" class="mt-1" />
+                <span>Se este e-mail já existir em um clube, autorizo a exclusão do vínculo anterior e a transferência para este clube.</span>
+              </label>
+              <button type="submit" class="w-full py-3.5 rounded-2xl font-bold text-[#003580] bg-[#FFD700] hover:brightness-95">
+                Criar conta
               </button>
-            </div>
+            </form>
           </div>
-          <button
-            type="submit"
-            class="w-full py-3.5 rounded-2xl font-semibold text-white bg-gradient-to-r from-[#7e57c2] to-[#03a9f4] shadow-md hover:opacity-95"
-          >
-            Criar conta
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
+      </section>
+    </main>
     <script>
       (function () {
         var i = document.getElementById("reg-password");

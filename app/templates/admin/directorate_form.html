@@ -20,6 +20,26 @@
         <label for="cargo">Cargo na diretoria *</label>
         <input id="cargo" name="cargo" required value="{{ m.cargo if m else '' }}" placeholder="Ex.: Diretor, Secretário, Capelão" />
       </div>
+      <div class="span-2 rounded-xl border border-violet-200 bg-violet-50/60 p-4 space-y-4">
+        <p class="text-sm font-semibold text-violet-900">Acesso ao portal (opcional)</p>
+        <p class="text-xs text-slate-600">
+          Informe o e-mail da pessoa e a função no sistema. Ao salvar, a conta passa a ter acesso ao painel correspondente
+          (ex.: tesoureiro → finanças). Se ainda não houver cadastro, será criada uma conta e enviado link para definir senha (quando o e-mail do servidor estiver configurado).
+        </p>
+        <div class="form-stack">
+          <label for="account_email">E-mail para login no portal</label>
+          <input id="account_email" name="account_email" type="email" value="" autocomplete="off" placeholder="ex.: nome@email.com" class="mt-1" />
+        </div>
+        <div class="form-stack">
+          <label for="perfil_cargo">Função no sistema</label>
+          <select id="perfil_cargo" name="perfil_cargo" class="mt-1">
+            <option value="">— não vincular agora —</option>
+            {% for value, label in leadership_roles %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
       <div class="form-stack">
         <label for="display_order">Ordem na lista</label>
         <input id="display_order" type="number" name="display_order" value="{{ m.display_order if m else 0 }}" />
@@ -52,7 +72,7 @@
   </div>
 
   <div class="flex flex-col-reverse sm:flex-row gap-3 sm:items-center">
-    <a href="{{ url_for('admin.directorate_list') }}" class="ui-btn ui-btn--outline text-center sm:inline-flex">Cancelar</a>
+    <a href="{{ url_for('admin.directorate_list', **admin_nav_kw) }}" class="ui-btn ui-btn--outline text-center sm:inline-flex">Cancelar</a>
     <button type="submit" class="ui-btn ui-btn--primary">Salvar</button>
   </div>
 </form>

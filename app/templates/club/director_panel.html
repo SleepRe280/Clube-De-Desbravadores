@@ -1,0 +1,355 @@
+{% extends "club/base_director_shell.html" %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block title %}Painel do Diretor{% endblock %}
+{% block mobile_title %}Painel do Diretor{% endblock %}
+{% block content %}
+{% set greeting_name = current_user.full_name or current_user.email or 'Direção' %}
+<div class="mx-auto max-w-7xl space-y-8">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-bold tracking-tight text-[#f4f4f8] sm:text-3xl">Bem-vindo, {{ greeting_name }}!</h1>
+    <p class="text-sm text-[#9ca3af]">Aqui está o resumo do clube <span class="font-medium text-violet-300">{{ club.nome }}</span>.</p>
+  </header>
+
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">Desbravadores</p>
+          <p class="mt-2 text-3xl font-bold text-[#f4f4f8]">{{ dash.n_members }}</p>
+        </div>
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/20 text-lg text-violet-300">👥</span>
+      </div>
+      <p class="mt-3 text-xs text-violet-300/90">Cadastro ativo no clube</p>
+    </div>
+    <div class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">Equipe no site</p>
+          <p class="mt-2 text-3xl font-bold text-[#f4f4f8]">{{ dash.n_directorate }}</p>
+        </div>
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/20 text-lg text-sky-300">✶</span>
+      </div>
+      <p class="mt-3 text-xs text-sky-300/90">Membros na página da diretoria</p>
+    </div>
+    <div class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">Comunicados</p>
+          <p class="mt-2 text-3xl font-bold text-[#f4f4f8]">{{ dash.n_posts }}</p>
+        </div>
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/20 text-lg text-emerald-300">📢</span>
+      </div>
+      <p class="mt-3 text-xs text-emerald-300/90">Publicações no mural</p>
+    </div>
+    <div class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">Eventos</p>
+          <p class="mt-2 text-3xl font-bold text-[#f4f4f8]">{{ dash.n_upcoming }}</p>
+        </div>
+        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-lg text-amber-200">📅</span>
+      </div>
+      <p class="mt-3 text-xs text-amber-200/90">Próximos na agenda</p>
+    </div>
+  </section>
+
+  <section class="grid gap-6 lg:grid-cols-5">
+    <div class="lg:col-span-3 rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-lg font-semibold text-[#f4f4f8]">Presenças no mês</h2>
+          <p class="text-xs text-[#9ca3af]">Registros marcados como presentes por dia</p>
+        </div>
+        <span class="rounded-full bg-[#12121b] px-3 py-1 text-xs font-medium text-violet-300 ring-1 ring-[#2a2a3a]">Este mês</span>
+      </div>
+      <div class="director-chart-wrap">
+        <canvas id="chartAttendance" aria-label="Gráfico de presenças"></canvas>
+      </div>
+    </div>
+    <div class="lg:col-span-2 rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+      <h2 class="text-lg font-semibold text-[#f4f4f8]">Desbravadores por unidade</h2>
+      <p class="text-xs text-[#9ca3af]">Distribuição cadastral</p>
+      {% if dash.unit_counts and dash.unit_counts | sum > 0 %}
+      <div class="director-donut-wrap mt-4">
+        <canvas id="chartUnits" aria-label="Gráfico por unidade"></canvas>
+      </div>
+      <div id="chartUnitsLegend" class="mt-4 space-y-2 text-xs text-[#d1d5db]"></div>
+      {% else %}
+      <p class="mt-8 text-center text-sm text-[#9ca3af]">Sem dados de unidade — informe a unidade nos cadastros.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="grid gap-6 lg:grid-cols-3">
+    <div class="lg:col-span-2 rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] shadow-xl shadow-black/20">
+      <div class="border-b border-[#2a2a3a] px-5 py-4">
+        <h2 class="text-lg font-semibold text-[#f4f4f8]">Desbravadores recentes</h2>
+        <p class="text-xs text-[#9ca3af]">Últimos cadastros (por ID)</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead class="bg-[#16161f] text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+            <tr>
+              <th class="px-4 py-3">Nome</th>
+              <th class="px-4 py-3">Unidade</th>
+              <th class="px-4 py-3 text-right">Desempenho</th>
+              <th class="px-4 py-3 text-right">Presença</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#2a2a3a] text-[#e5e7eb]">
+            {% for m in dash.recent_members %}
+            {% set _st = m.attendance_stats() %}
+            {% set _rate = _st[2] %}
+            <tr class="hover:bg-[#16161f]/80">
+              <td class="px-4 py-3 font-medium">{{ m.full_name }}</td>
+              <td class="px-4 py-3 text-[#9ca3af]">{{ m.unit or '—' }}</td>
+              <td class="px-4 py-3 text-right tabular-nums">{{ m.overall_performance or m.computed_overall_performance() or 0 }}%</td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2">
+                  <span class="tabular-nums text-xs text-emerald-300">{{ _rate }}%</span>
+                  {% set _bar = _rate if _rate <= 100 else 100 %}
+                  <span class="hidden h-2 w-24 overflow-hidden rounded-full bg-[#12121b] sm:inline-block" title="Presença">
+                    <span class="block h-full rounded-full bg-emerald-500/80" style="width: {{ _bar }}%"></span>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="px-4 py-8 text-center text-[#9ca3af]">Nenhum desbravador cadastrado.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+        <h2 class="text-lg font-semibold text-[#f4f4f8]">Próximos eventos</h2>
+        <ul class="mt-4 space-y-4">
+          {% for ev in dash.upcoming_events %}
+          <li class="flex gap-3 border-b border-[#2a2a3a]/80 pb-4 last:border-0 last:pb-0">
+            <div class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-violet-600/25 text-center">
+              <span class="text-[10px] font-bold uppercase text-violet-200">{{ ev.event_date.strftime('%d') }}</span>
+              <span class="text-[9px] text-violet-300/90">{{ ev.event_date.strftime('%m') }}</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="font-medium leading-snug text-[#f4f4f8]">{{ ev.title }}</p>
+              {% if ev.event_time %}
+              <p class="mt-1 text-xs text-[#9ca3af]">🕐 {{ ev.event_time }}</p>
+              {% endif %}
+            </div>
+          </li>
+          {% else %}
+          <li class="text-sm text-[#9ca3af]">Nenhum evento futuro na agenda.</li>
+          {% endfor %}
+        </ul>
+        <a href="{{ url_for('admin.agenda_list', clube_id=club.id) }}" class="mt-4 inline-flex text-sm font-medium text-violet-300 hover:text-violet-200">Ver agenda completa →</a>
+      </div>
+
+      <div class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-5 shadow-xl shadow-black/20">
+        <h2 class="text-lg font-semibold text-[#f4f4f8]">Atividades recentes</h2>
+        <ul class="mt-4 space-y-4">
+          {% for act in dash.recent_activities %}
+          <li class="flex gap-3">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#12121b] text-xs font-bold text-violet-300 ring-1 ring-[#2a2a3a]">
+              {{ act.member_name[0]|upper }}
+            </div>
+            <div class="min-w-0 flex-1 text-sm leading-snug">
+              <span class="font-medium text-[#f4f4f8]">{{ act.member_name }}</span>
+              <span class="text-[#9ca3af]"> — {{ act.title }}</span>
+              <span class="mt-1 block text-xs text-[#6b7280]">{{ act.ago }} · {{ act.progress }}%</span>
+            </div>
+          </li>
+          {% else %}
+          <li class="text-sm text-[#9ca3af]">Sem registros de atividades.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-6 shadow-xl shadow-black/20">
+    <h2 class="text-lg font-semibold text-[#f4f4f8]">Delegar funções no clube</h2>
+    <p class="mt-1 text-sm text-[#9ca3af]">Busque por nome ou e-mail. Use o e-mail exato no formulário abaixo.</p>
+    <form method="get" action="{{ url_for('club.director_panel', clube_id=club.id) }}" class="mt-4 flex flex-wrap gap-2 items-end">
+      <div class="min-w-[220px] flex-1">
+        <label class="mb-1 block text-xs font-medium text-[#9ca3af]">Pesquisar</label>
+        <input type="search" name="q" value="{{ search_q }}" placeholder="Nome ou e-mail…" class="w-full rounded-xl border border-[#2a2a3a] bg-[#12121b] px-3 py-2.5 text-sm text-[#f4f4f8] placeholder:text-[#6b7280] focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" />
+      </div>
+      <button type="submit" class="rounded-xl border border-violet-500/50 bg-violet-600/30 px-5 py-2.5 text-sm font-medium text-violet-100 hover:bg-violet-600/50">Buscar</button>
+      {% if search_q %}
+      <a href="{{ url_for('club.director_panel', clube_id=club.id) }}" class="rounded-xl px-3 py-2.5 text-sm text-[#9ca3af] hover:text-[#f4f4f8]">Limpar</a>
+      {% endif %}
+    </form>
+    {% if search_hits %}
+    <ul class="mt-4 space-y-2 border-t border-[#2a2a3a] pt-4 text-sm">
+      {% for u, prof in search_hits %}
+      <li class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#2a2a3a] bg-[#16161f] px-3 py-2">
+        <div>
+          <p class="font-medium text-[#f4f4f8]">{{ u.full_name or "Sem nome" }}</p>
+          <p class="break-all text-xs text-[#9ca3af]">{{ u.email }}</p>
+        </div>
+        <code class="select-all rounded-lg border border-[#2a2a3a] bg-[#12121b] px-2 py-1 text-xs text-violet-200">{{ u.email }}</code>
+      </li>
+      {% endfor %}
+    </ul>
+    {% elif search_q %}
+    <p class="mt-3 text-sm text-[#9ca3af]">Nenhum usuário encontrado.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('club.delegate_role', clube_id=club.id) }}" class="mt-8 space-y-4 border-t border-[#2a2a3a] pt-6">
+      <div>
+        <label class="mb-1 block text-xs font-medium text-[#9ca3af]">E-mail do usuário</label>
+        <input name="email" type="email" required autocomplete="email" placeholder="E-mail do usuário" class="w-full rounded-xl border border-[#2a2a3a] bg-[#12121b] px-3 py-2.5 text-sm text-[#f4f4f8] placeholder:text-[#6b7280] focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" />
+      </div>
+      <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {% for value, label in delegation_roles %}
+        <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-[#2a2a3a] bg-[#16161f] px-3 py-2.5 text-sm text-[#e5e7eb] hover:border-violet-500/40">
+          <input type="checkbox" name="cargos" value="{{ value }}" class="rounded border-[#2a2a3a] bg-[#12121b] text-violet-600 focus:ring-violet-500" />
+          <span class="font-medium">{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="submit" class="rounded-xl bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/30 hover:bg-violet-500">Salvar funções</button>
+    </form>
+  </section>
+
+  <section class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-6 shadow-xl shadow-black/20">
+    <h3 class="text-lg font-semibold text-[#f4f4f8]">Liderança do portal (sem responsáveis)</h3>
+    <div class="mt-4 space-y-2 text-sm">
+      {% for row in users %}
+      <div class="flex items-center justify-between gap-3 rounded-xl border border-[#2a2a3a] bg-[#16161f] px-4 py-3">
+        <div>
+          <p class="font-medium text-[#f4f4f8]">{{ row.user.full_name or 'Sem nome' }}</p>
+          <p class="text-xs text-[#9ca3af]">{{ row.user.email }}</p>
+        </div>
+        <span class="shrink-0 rounded-lg bg-[#12121b] px-2 py-1 text-xs text-violet-200 ring-1 ring-[#2a2a3a]">{{ row.cargos_label }}</span>
+      </div>
+      {% else %}
+      <p class="text-[#9ca3af]">Nenhuma função de liderança delegada ainda.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">O administrador mestre continua com visão global para suporte e manutenção.</p>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  (function () {
+    const commonOpts = {
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#9ca3af" } } },
+    };
+    const attLabels = {{ dash.attendance_labels | tojson }};
+    const attData = {{ dash.attendance_counts | tojson }};
+    const el = document.getElementById("chartAttendance");
+    if (el && window.Chart) {
+      new Chart(el, {
+        type: "line",
+        data: {
+          labels: attLabels,
+          datasets: [
+            {
+              label: "Presenças",
+              data: attData,
+              borderColor: "#8b5cf6",
+              backgroundColor: "rgba(139, 92, 246, 0.12)",
+              tension: 0.35,
+              fill: true,
+              pointRadius: 0,
+              borderWidth: 2,
+            },
+          ],
+        },
+        options: {
+          ...commonOpts,
+          scales: {
+            x: {
+              ticks: { color: "#6b7280", maxTicksLimit: 8 },
+              grid: { color: "rgba(42, 42, 58, 0.6)" },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: "#6b7280", precision: 0 },
+              grid: { color: "rgba(42, 42, 58, 0.6)" },
+            },
+          },
+        },
+      });
+    }
+
+    const uLabels = {{ dash.unit_labels | tojson }};
+    const uCounts = {{ dash.unit_counts | tojson }};
+    const doughnutEl = document.getElementById("chartUnits");
+    const palette = ["#8b5cf6", "#38bdf8", "#34d399", "#fbbf24", "#fb7185", "#a78bfa"];
+    if (doughnutEl && window.Chart && uCounts.length) {
+      const total = uCounts.reduce((a, b) => a + b, 0);
+      new Chart(doughnutEl, {
+        type: "doughnut",
+        data: {
+          labels: uLabels,
+          datasets: [
+            {
+              data: uCounts,
+              backgroundColor: uLabels.map((_, i) => palette[i % palette.length]),
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          cutout: "68%",
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label(ctx) {
+                  const v = ctx.raw || 0;
+                  const pct = total ? Math.round((100 * v) / total) : 0;
+                  return `${ctx.label}: ${v} (${pct}%)`;
+                },
+              },
+            },
+          },
+        },
+        plugins: [
+          {
+            id: "centerTotal",
+            beforeDraw(chart) {
+              const { ctx: x, chartArea } = chart;
+              if (!chartArea) return;
+              const cx = (chartArea.left + chartArea.right) / 2;
+              const cy = (chartArea.top + chartArea.bottom) / 2;
+              x.save();
+              x.font = "600 13px 'Plus Jakarta Sans',sans-serif";
+              x.fillStyle = "#9ca3af";
+              x.textAlign = "center";
+              x.fillText("Total", cx, cy - 6);
+              x.font = "700 22px 'Plus Jakarta Sans',sans-serif";
+              x.fillStyle = "#f4f4f8";
+              x.fillText(String(total), cx, cy + 18);
+              x.restore();
+            },
+          },
+        ],
+      });
+      const leg = document.getElementById("chartUnitsLegend");
+      if (leg) {
+        uLabels.forEach((lab, i) => {
+          const n = uCounts[i];
+          const pct = total ? Math.round((100 * n) / total) : 0;
+          const row = document.createElement("div");
+          row.className = "flex items-center justify-between gap-2";
+          row.innerHTML = `<span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm" style="background:${palette[i % palette.length]}"></span>${lab}</span><span>${n} <span class="text-[#6b7280]">(${pct}%)</span></span>`;
+          leg.appendChild(row);
+        });
+      }
+    }
+  })();
+</script>
+{% endblock %}

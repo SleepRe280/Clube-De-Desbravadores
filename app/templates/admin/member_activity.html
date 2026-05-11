@@ -1,6 +1,7 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}Caderno — {{ member.full_name }}{% endblock %}
 {% block content %}
+{% macro clube_scope_hidden() %}{% if member.clube_id %}<input type="hidden" name="clube_id" value="{{ member.clube_id }}" />{% endif %}{% endmacro %}
 {% set pct = notebook_pct %}
 <div class="flex flex-wrap items-center justify-between gap-4">
   <div>
@@ -10,7 +11,7 @@
     <p class="text-sm text-blue-700 mt-1 font-medium">Foco atual: {{ member.notebook_current }}</p>
     {% endif %}
   </div>
-  <a href="{{ url_for('admin.members') }}" class="ui-link ui-link--subtle text-sm">← Lista</a>
+  <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="ui-link ui-link--subtle text-sm">← Lista</a>
 </div>
 
 <section class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -42,6 +43,7 @@
   <h2 class="font-semibold text-indigo-900 border-b border-indigo-100 pb-2">Checklist do caderno (itens 1 a 30)</h2>
   <p class="text-xs text-slate-600 mt-2 mb-4">Cada caixa é verdadeiro ou falso. Itens marcados entram na progressão acima.</p>
   <form method="post" action="{{ url_for('admin.member_notebook_checklist_save', member_id=member.id) }}" class="space-y-4">
+    {{ clube_scope_hidden() }}
     <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-10 gap-x-2 gap-y-3">
       {% for i in range(1, 31) %}
       <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">
@@ -59,6 +61,7 @@
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
       <h2 class="font-semibold border-b border-slate-100 pb-2">Novo requisito / atividade</h2>
       <form method="post" class="mt-4 space-y-3 text-sm">
+        {{ clube_scope_hidden() }}
         <div>
           <label class="block text-slate-600 mb-1">Título / requisito *</label>
           <input name="title" required class="w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -90,6 +93,7 @@
       </p>
       <p class="text-lg font-bold text-amber-900 mt-3">Total acumulado: <span class="tabular-nums">{{ duques_total }}</span> duques</p>
       <form method="post" action="{{ url_for('admin.member_duques_add', member_id=member.id) }}" class="mt-4 space-y-3 text-sm">
+        {{ clube_scope_hidden() }}
         <div>
           <label class="block text-slate-600 mb-1">Data da reunião *</label>
           <input name="meeting_date" type="date" required value="{{ today_iso }}" class="w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -114,6 +118,7 @@
             {% if d.note %}<span class="text-slate-500 text-xs block mt-0.5">{{ d.note }}</span>{% endif %}
           </div>
           <form method="post" action="{{ url_for('admin.member_duques_delete', member_id=member.id, duque_id=d.id) }}" onsubmit="return confirm('Remover este lançamento de duques?');">
+            {{ clube_scope_hidden() }}
             <button type="submit" class="ui-btn ui-btn--sm ui-btn--text-danger">Excluir</button>
           </form>
         </li>
@@ -143,10 +148,12 @@
           <p class="text-xs text-slate-400 mt-2">{{ r.recorded_at.strftime('%d/%m/%Y') }}</p>
           <div class="flex flex-wrap gap-2 mt-3">
             <form method="post" action="{{ url_for('admin.activity_toggle_completed', member_id=member.id, rec_id=r.id) }}">
+              {{ clube_scope_hidden() }}
               <input type="hidden" name="completed" value="0" />
               <button type="submit" class="ui-btn ui-btn--sm ui-btn--text">Marcar em andamento</button>
             </form>
             <form method="post" action="{{ url_for('admin.activity_delete', member_id=member.id, rec_id=r.id) }}" onsubmit="return confirm('Excluir este registro?');">
+              {{ clube_scope_hidden() }}
               <button type="submit" class="ui-btn ui-btn--sm ui-btn--text-danger">Excluir</button>
             </form>
           </div>
@@ -173,10 +180,12 @@
           <p class="text-xs text-slate-400 mt-2">{{ r.recorded_at.strftime('%d/%m/%Y') }}</p>
           <div class="flex flex-wrap gap-2 mt-3">
             <form method="post" action="{{ url_for('admin.activity_toggle_completed', member_id=member.id, rec_id=r.id) }}">
+              {{ clube_scope_hidden() }}
               <input type="hidden" name="completed" value="1" />
               <button type="submit" class="ui-btn ui-btn--sm ui-btn--text ui-btn--text-success">Marcar concluído</button>
             </form>
             <form method="post" action="{{ url_for('admin.activity_delete', member_id=member.id, rec_id=r.id) }}" onsubmit="return confirm('Excluir este registro?');">
+              {{ clube_scope_hidden() }}
               <button type="submit" class="ui-btn ui-btn--sm ui-btn--text-danger">Excluir</button>
             </form>
           </div>

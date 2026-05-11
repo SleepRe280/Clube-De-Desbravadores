@@ -1,0 +1,84 @@
+/**
+ * Shell escuro /clube — painel da direção (complementa Tailwind no HTML).
+ */
+.director-shell {
+  --dir-bg: #12121b;
+  --dir-card: #1a1a26;
+  --dir-card-hover: #222230;
+  --dir-border: #2a2a3a;
+  --dir-text: #f4f4f8;
+  --dir-muted: #9ca3af;
+  --dir-accent: #8b5cf6;
+}
+
+.director-shell .flash-stack .flash-msg {
+  border-radius: 0.75rem;
+}
+.director-shell .flash-msg.bg-emerald-100 {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #a7f3d0 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+.director-shell .flash-msg.bg-red-100 {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #fecaca !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+.director-shell .flash-msg.bg-amber-100 {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+.director-shell .flash-msg.bg-slate-100 {
+  background: rgba(148, 163, 184, 0.12) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+.director-nav-toggle {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.director-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 40;
+}
+
+.director-nav-toggle:checked ~ .director-overlay {
+  display: block;
+}
+
+@media (max-width: 1023px) {
+  .director-nav-toggle:checked ~ aside.director-sidebar {
+    transform: translateX(0);
+  }
+}
+
+.director-sidebar {
+  transition: transform 0.2s ease;
+}
+
+@media (max-width: 1023px) {
+  aside.director-sidebar {
+    transform: translateX(-100%);
+    z-index: 50;
+  }
+}
+
+.director-chart-wrap {
+  position: relative;
+  height: 220px;
+}
+
+.director-donut-wrap {
+  position: relative;
+  height: 200px;
+  max-width: 220px;
+  margin-left: auto;
+  margin-right: auto;
+}

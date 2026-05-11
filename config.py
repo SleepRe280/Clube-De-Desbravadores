@@ -1,5 +1,22 @@
 import os
 
+
+def _load_dotenv() -> None:
+    """Carrega `.env` na raiz do projeto antes de qualquer leitura de variáveis (ficheiro ignorado pelo Git)."""
+    root = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(root, ".env")
+    if not os.path.isfile(path):
+        return
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(path)
+    except ImportError:
+        pass
+
+
+_load_dotenv()
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
 
@@ -37,10 +54,23 @@ def _url_prefix() -> str:
     return raw.rstrip("/") or ""
 
 
+_CONFIGURED_DATABASE_URI = _database_uri()
+
+# Servidor local (run.py): HOST, PORT, FLASK_APP podem ir em `.env`.
+DEV_SERVER_HOST_DEFAULT = "127.0.0.1"
+DEV_SERVER_PORT_DEFAULT = 5055
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "troque-esta-chave-em-producao")
-    SQLALCHEMY_DATABASE_URI = _database_uri()
+    SQLALCHEMY_DATABASE_URI = _CONFIGURED_DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # SQLite: timeout maior reduz falhas com ficheiro em pasta sincronizada (ex.: OneDrive).
+    SQLALCHEMY_ENGINE_OPTIONS = (
+        {"connect_args": {"check_same_thread": False, "timeout": 45}}
+        if "sqlite" in _CONFIGURED_DATABASE_URI.lower()
+        else {}
+    )
     UPLOAD_FOLDER = os.path.join(INSTANCE_DIR, "uploads")
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
     DEBUG = _env_flag("FLASK_DEBUG", default=False)
@@ -49,6 +79,7 @@ class Config:
     SESSION_COOKIE_SECURE = _env_flag("SESSION_COOKIE_SECURE", default=False)
     PREFERRED_URL_SCHEME = os.environ.get("PREFERRED_URL_SCHEME", "http").strip().lower()
     URL_PREFIX = _url_prefix()
+    WTF_CSRF_TIME_LIMIT = None
 
     # E-mail (SMTP) — cadastro e recuperação de senha
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "").strip()

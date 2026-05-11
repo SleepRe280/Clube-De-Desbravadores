@@ -7,6 +7,21 @@
 </p>
 
 <form method="post" enctype="multipart/form-data" class="mt-6 max-w-3xl space-y-8">
+  {% if show_clube_picker and clubs %}
+  <div class="bg-amber-50 rounded-xl border border-amber-200 p-6 shadow-sm">
+    <h2 class="text-sm font-bold text-amber-900 uppercase tracking-wide border-b border-amber-200 pb-2">Clube</h2>
+    <p class="text-sm text-amber-900/90 mt-2">Super admin: selecione em qual clube este desbravador será cadastrado.</p>
+    <label class="block text-sm font-medium text-slate-800 mt-4 mb-1">Clube *</label>
+    <select name="clube_id" required class="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 bg-white">
+      <option value="">Selecione…</option>
+      {% for c in clubs %}
+      <option value="{{ c.id }}" {% if request.args.get('clube_id') == c.id %}selected{% endif %}>{{ c.nome }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% elif request.args.get('clube_id') %}
+  <input type="hidden" name="clube_id" value="{{ request.args.get('clube_id') }}" />
+  {% endif %}
   <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
     <h2 class="text-sm font-bold text-red-700 uppercase tracking-wide border-b border-red-100 pb-2">Identificação</h2>
     <div class="grid sm:grid-cols-2 gap-4 mt-4">
@@ -157,36 +172,57 @@
     <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-2">Conta no portal (pai/mãe)</h2>
     <div class="mt-4">
       <label class="block text-sm font-medium text-slate-700 mb-1">Responsável com login no site</label>
-      <select name="parent_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white">
-        <option value="0" {% if not member or not member.parent_id %}selected{% endif %}>Nenhum ainda</option>
-        {% for p in parent_users %}
-        <option value="{{ p.id }}" {% if member and member.parent_id == p.id %}selected{% endif %}>
-          {{ p.full_name or 'Sem nome' }} — {{ p.email }}
-        </option>
-        {% endfor %}
-      </select>
-      {% if not parent_users %}
-      <p class="text-xs text-amber-700 mt-2">Nenhum responsável cadastrado ainda.</p>
+      {% if admin_panel.can_manage_member_links %}
+        <select name="parent_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white">
+          <option value="0" {% if not member or not member.parent_id %}selected{% endif %}>Nenhum ainda</option>
+          {% for p in parent_users %}
+          <option value="{{ p.id }}" {% if member and member.parent_id == p.id %}selected{% endif %}>
+            {{ p.full_name or 'Sem nome' }} — {{ p.email }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if not parent_users %}
+        <p class="text-xs text-amber-700 mt-2">Nenhum responsável cadastrado ainda.</p>
+        {% endif %}
+        <p class="text-xs text-slate-500 mt-2">
+          Também é possível vincular em <a href="{{ url_for('admin.parents_list', **admin_nav_kw) }}" class="text-blue-600 underline">Responsáveis & vínculos</a>.
+        </p>
+      {% else %}
+        <p class="text-sm text-slate-600">
+          Vínculo gerenciado pela diretoria/secretaria. Seu cargo não permite alterar o vínculo.
+        </p>
+        {% if member and member.parent_id %}
+          <p class="text-xs text-slate-500 mt-2">
+            Responsável atual:
+            {% for p in parent_users %}
+              {% if p.id == member.parent_id %}
+                {{ p.full_name or 'Sem nome' }} — {{ p.email }}
+              {% endif %}
+            {% endfor %}
+          </p>
+        {% else %}
+          <p class="text-xs text-slate-500 mt-2">Nenhum responsável vinculado.</p>
+        {% endif %}
       {% endif %}
-      <p class="text-xs text-slate-500 mt-2">
-        Também é possível vincular em <a href="{{ url_for('admin.parents_list') }}" class="text-blue-600 underline">Responsáveis & vínculos</a>.
-      </p>
     </div>
   </div>
 
   <div class="flex flex-wrap gap-3">
     <button type="submit" class="ui-btn ui-btn--primary">Salvar ficha</button>
-    <a href="{{ url_for('admin.members') }}" class="ui-btn ui-btn--outline">Voltar à lista</a>
+    <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="ui-btn ui-btn--outline">Voltar à lista</a>
   </div>
 </form>
 
-{% if member %}
+{% if member and admin_panel.can_delete_members %}
 <form
   method="post"
   action="{{ url_for('admin.member_delete', id=member.id) }}"
   class="mt-8 max-w-3xl pt-6 border-t border-red-100"
   onsubmit="return confirm('Excluir permanentemente este desbravador e presenças, caderno e duques? Esta ação não pode ser desfeita.');"
 >
+  {% if member.clube_id %}
+  <input type="hidden" name="clube_id" value="{{ member.clube_id }}" />
+  {% endif %}
   <button type="submit" class="ui-btn ui-btn--text-danger">Excluir desbravador do sistema</button>
 </form>
 {% endif %}

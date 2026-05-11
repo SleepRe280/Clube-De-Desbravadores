@@ -6,7 +6,7 @@
     <h1 class="text-2xl font-bold">Presença em reuniões</h1>
     <p class="text-slate-600">{{ member.full_name }}</p>
   </div>
-  <a href="{{ url_for('admin.members') }}" class="ui-link ui-link--subtle text-sm">← Lista</a>
+  <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="ui-link ui-link--subtle text-sm">← Lista</a>
 </div>
 
 {% if att_total %}
@@ -26,6 +26,9 @@
   <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
     <h2 class="font-semibold">Registrar reunião</h2>
     <form method="post" class="mt-4 space-y-3 text-sm">
+      {% if member.clube_id %}
+      <input type="hidden" name="clube_id" value="{{ member.clube_id }}" />
+      {% endif %}
       <div>
         <label class="block text-slate-600 mb-1">Data da reunião</label>
         <input type="date" name="meeting_date" required class="w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -58,6 +61,9 @@
             <span class="text-red-600 font-medium">Falta</span>
             {% endif %}
             <form method="post" action="{{ url_for('admin.attendance_delete', member_id=member.id, att_id=a.id) }}" class="inline" onsubmit="return confirm('Excluir este registro de presença?');">
+              {% if member.clube_id %}
+              <input type="hidden" name="clube_id" value="{{ member.clube_id }}" />
+              {% endif %}
               <button type="submit" class="ui-btn ui-btn--sm ui-btn--text-danger">Excluir</button>
             </form>
           </div>

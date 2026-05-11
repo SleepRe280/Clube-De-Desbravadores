@@ -35,9 +35,11 @@
           {% endif %}
         </td>
         <td class="px-4 py-3 text-right">
+          {% if admin_panel.can_manage_member_links %}
           <a href="{{ url_for('admin.parent_detail', user_id=p.id) }}" class="text-blue-600 font-medium hover:underline"
             >Gerenciar vínculos</a
           >
+          {% endif %}
         </td>
       </tr>
       {% else %}

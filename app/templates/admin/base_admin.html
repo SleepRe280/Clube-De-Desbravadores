@@ -1,4 +1,18 @@
-﻿<!DOCTYPE html>
+﻿{# admin_panel: fallback embutido se o contexto não trouxer (evita UndefinedError). #}
+{% set _admin_panel_fb = {
+  'show_finance_nav': false,
+  'can_view_finance': false,
+  'can_write_finance': false,
+  'can_manage_directorate_ui': false,
+  'can_delegate_roles': false,
+  'can_write_agenda': false,
+  'can_manage_member_links': false,
+  'can_add_members': false,
+  'can_delete_members': false,
+  'can_delete_parent_accounts': false,
+} %}
+{% set admin_panel = admin_panel | default(_admin_panel_fb, true) %}
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
@@ -13,6 +27,11 @@
       rel="stylesheet"
     />
     <style>
+      :root {
+        --club-primary: {{ theme_colors.primary }};
+        --club-secondary: {{ theme_colors.secondary }};
+        --club-accent: {{ theme_colors.accent }};
+      }
       body.admin-shell {
         font-family: "Plus Jakarta Sans", system-ui, sans-serif;
         letter-spacing: -0.01em;
@@ -31,7 +50,7 @@
     <label for="admin-nav-toggle" class="admin-overlay" aria-hidden="true"></label>
 
     <aside class="admin-sidebar">
-      <div class="p-5 border-b border-[var(--border-subtle)] shrink-0 bg-white/90">
+      <div class="p-5 border-b border-[var(--border-subtle)] shrink-0" style="background: var(--surface-glass-strong);">
         <div class="flex gap-1 mb-3 rounded-full overflow-hidden h-1.5" aria-hidden="true">
           <span class="flex-1 bg-[#CFE8D8]"></span>
           <span class="flex-1 bg-[#F6E7B4]"></span>
@@ -40,58 +59,84 @@
           <span class="flex-1 bg-[#D6CCE8]"></span>
           <span class="flex-1 bg-[#C9E0F2]"></span>
         </div>
-        <p class="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.14em]">Painel</p>
-        <p class="font-bold text-[var(--text-primary)] text-lg mt-0.5">Diretoria</p>
+        <div class="flex items-start gap-3">
+          <img
+            src="{{ club_logo_src }}"
+            width="48"
+            height="48"
+            alt=""
+            class="h-12 w-12 shrink-0 object-contain rounded-2xl bg-white ring-1 ring-[var(--border-subtle)] shadow-sm"
+          />
+          <div class="min-w-0 flex-1">
+            <p class="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-[0.14em]">Painel</p>
+            <p class="font-bold text-[var(--text-primary)] text-lg mt-0.5 leading-tight">{{ active_club.nome if active_club else "Diretoria" }}</p>
+          </div>
+        </div>
+        {% if current_user.is_authenticated and current_user.perfil and painel_cargo_label %}
+        <p class="text-xs text-[var(--text-muted)] mt-1 leading-snug">{{ painel_cargo_label }}</p>
+        {% endif %}
       </div>
       <nav class="p-3 space-y-1 flex-1 text-sm overflow-y-auto">
         <a
-          href="{{ url_for('admin.dashboard') }}"
+          href="{{ url_for('admin.dashboard', **admin_nav_kw) }}"
           class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint == 'admin.dashboard' %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
           ><span class="admin-nav-icon admin-nav-icon--inicio" aria-hidden="true">🏠</span><span>Início e mapa</span></a
         >
         <a
-          href="{{ url_for('admin.agenda_list') }}"
+          href="{{ url_for('admin.agenda_list', **admin_nav_kw) }}"
           class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint in ['admin.agenda_list', 'admin.agenda_new', 'admin.agenda_edit'] %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
           ><span class="admin-nav-icon admin-nav-icon--agenda" aria-hidden="true">📅</span><span>Agenda</span></a
         >
         <a
-          href="{{ url_for('admin.members') }}"
+          href="{{ url_for('admin.members', **admin_nav_kw) }}"
           class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint in ['admin.members', 'admin.member_new', 'admin.member_edit', 'admin.member_activity', 'admin.member_attendance'] %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
           ><span class="admin-nav-icon admin-nav-icon--desbravadores" aria-hidden="true">👥</span><span>Desbravadores</span></a
         >
         <a
-          href="{{ url_for('admin.directorate_list') }}"
+          href="{{ url_for('admin.directorate_list', **admin_nav_kw) }}"
           class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint in ['admin.directorate_list', 'admin.directorate_new', 'admin.directorate_edit'] %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
-          ><span class="admin-nav-icon admin-nav-icon--diretoria" aria-hidden="true">✦</span><span>Equipe da diretoria</span></a
+          ><span class="admin-nav-icon admin-nav-icon--diretoria" aria-hidden="true">★</span><span>Equipe da diretoria</span></a
         >
         <a
-          href="{{ url_for('admin.parents_list') }}"
+          href="{{ url_for('admin.parents_list', **admin_nav_kw) }}"
           class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint in ['admin.parents_list', 'admin.parent_detail'] %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
           ><span class="admin-nav-icon admin-nav-icon--responsaveis" aria-hidden="true">👪</span><span>Responsáveis</span></a
         >
         <a
-          href="{{ url_for('admin.attendance_overview') }}"
+          href="{{ url_for('admin.attendance_overview', **admin_nav_kw) }}"
           class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint == 'admin.attendance_overview' %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
-          ><span class="admin-nav-icon admin-nav-icon--presencas" aria-hidden="true">✓</span><span>Presenças</span></a
+          ><span class="admin-nav-icon admin-nav-icon--presencas" aria-hidden="true">✔</span><span>Presenças</span></a
         >
+        {% if admin_panel.get('show_finance_nav') %}
         <a
-          href="{{ url_for('admin.finance_dashboard') }}"
+          href="{{ url_for('admin.finance_dashboard', **admin_nav_kw) }}"
           class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint in ['admin.finance_dashboard', 'admin.finance_ledger_add', 'admin.finance_ledger_delete', 'admin.finance_fee_add', 'admin.finance_fee_mark_paid', 'admin.finance_fee_delete'] %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
           ><span class="admin-nav-icon admin-nav-icon--financeiro" aria-hidden="true">💰</span><span>Financeiro</span></a
         >
+        {% endif %}
         <a
-          href="{{ url_for('admin.posts') }}"
-          class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint in ['admin.posts', 'admin.post_new'] %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
-          ><span class="admin-nav-icon admin-nav-icon--avisos" aria-hidden="true">📢</span><span>Comunicados</span></a
+          href="{{ url_for('admin.posts', **admin_nav_kw) }}"
+          class="admin-nav-link flex items-center gap-2.5 rounded-2xl px-3 py-2.5 min-h-[44px] {% if request.endpoint in ['admin.posts', 'admin.post_new', 'admin.post_edit'] %}admin-nav-link--active{% else %}text-[var(--text-secondary)]{% endif %}"
+          ><span class="admin-nav-icon admin-nav-icon--avisos" aria-hidden="true">📢</span><span>Publicações</span></a
         >
       </nav>
-      <div class="p-4 border-t border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] shrink-0 bg-[#f8f8f9]">
-        <p class="truncate">{{ current_user.email }}</p>
-        <a href="{{ url_for('auth.logout') }}" class="ui-btn ui-btn--logout mt-3">Sair</a>
+      <div class="p-4 border-t border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] shrink-0 space-y-2" style="background: var(--surface-muted);">
+        <p class="truncate">{% if current_user.is_authenticated %}{{ current_user.email }}{% else %}—{% endif %}</p>
+        {% if session.get('super_admin_impersonating') %}
+        <a href="{{ url_for('auth.back_to_super_admin') }}" class="ui-btn ui-btn--brand ui-btn--block text-center">Voltar para Super Admin</a>
+        {% endif %}
+        <a href="{{ url_for('auth.usuario') }}" class="ui-btn ui-btn--text ui-btn--block text-center">Minha conta</a>
+        <a href="{{ url_for('auth.logout') }}" class="ui-btn ui-btn--logout ui-btn--block text-center">Sair</a>
       </div>
     </aside>
 
     <main class="admin-main">
+      {% if session.get('super_admin_impersonating') %}
+      <section class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
+        <strong>Modo Super Admin:</strong> você está atuando como conta de diretoria deste clube.
+        Use o botão <strong>Voltar para Super Admin</strong> no menu lateral para retornar.
+      </section>
+      {% endif %}
       {% include "partials/flash.html" %}
       {% block content %}{% endblock %}
     </main>

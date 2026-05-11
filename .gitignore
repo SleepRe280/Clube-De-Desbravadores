@@ -3,4 +3,10 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Ambiente local e segredos — um único ficheiro na raiz (ver .env.example)
 .env
+.env.*
+.env.example
+# Legado: antes usava-se isto; manter ignorado por segurança
+.vscode/dev.env

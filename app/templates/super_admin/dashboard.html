@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Super Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gradient-to-br from-slate-100 via-blue-50 to-amber-50 min-h-screen p-4 sm:p-6">
+    {% set club_director_user_ids = club_director_user_ids | default({}, true) %}
+    <div class="max-w-7xl mx-auto space-y-6">
+      {% include "partials/flash.html" %}
+      <header class="rounded-3xl p-7 shadow-xl text-white" style="background: linear-gradient(135deg, #003580, #0d47a1, #cc0000);">
+        <div class="flex items-center gap-4">
+          <img src="{{ url_for('static', filename='img/brasao-desbravadores-oficial.png') }}" alt="Brasão Clube de Desbravadores" class="h-16 w-16 rounded-xl bg-white/95 p-1 object-contain" />
+          <div>
+            <h1 class="text-3xl font-bold">Super Admin • Gestão Global</h1>
+            <p class="mt-1 text-white/90">{{ counts.clubes }} clube(s) cadastrado(s)</p>
+          </div>
+          <div class="ml-auto">
+            <a href="{{ url_for('auth.logout') }}" class="ui-btn ui-btn--text bg-white/15 text-white hover:bg-white/20">Sair</a>
+          </div>
+        </div>
+        <p class="mt-2 text-white/90">Controle central dos clubes, diretores e acessos administrativos.</p>
+        <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <div class="bg-white/15 backdrop-blur rounded-2xl p-3"><strong>{{ counts.clubes }}</strong><br />Clubes</div>
+          <div class="bg-white/15 backdrop-blur rounded-2xl p-3"><strong>{{ counts.users }}</strong><br />Usuários</div>
+          <div class="bg-white/15 backdrop-blur rounded-2xl p-3"><strong>{{ counts.diretores }}</strong><br />Diretores</div>
+          <div class="bg-white/15 backdrop-blur rounded-2xl p-3"><strong>{{ counts.pais }}</strong><br />Responsáveis</div>
+        </div>
+      </header>
+
+      <section class="grid xl:grid-cols-3 gap-6">
+        <form method="post" action="{{ url_for('super_admin.create_club') }}" enctype="multipart/form-data" class="bg-white rounded-3xl p-6 shadow space-y-3 xl:col-span-2">
+          <h2 class="text-lg font-semibold">Criar novo clube</h2>
+          <p class="text-sm text-slate-600">Template genérico — preencha identidade e paleta (estrutura vazia, sem copiar dados de outro cadastro).</p>
+          <input name="nome" placeholder="Nome do clube" required class="w-full rounded-xl border px-3 py-2" />
+          <textarea name="descricao" rows="2" placeholder="Descrição (opcional)" class="w-full rounded-xl border px-3 py-2"></textarea>
+          <input name="titulo_sistema" placeholder="Título do sistema" class="w-full rounded-xl border px-3 py-2" />
+          <div class="grid grid-cols-2 gap-3">
+            <input name="cidade" placeholder="Cidade" class="rounded-xl border px-3 py-2" />
+            <input name="regiao" placeholder="Região" class="rounded-xl border px-3 py-2" />
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <input name="cor_primaria" value="#003580" class="rounded-xl border px-3 py-2" title="Primária" />
+            <input name="cor_secundaria" value="#FFD700" class="rounded-xl border px-3 py-2" title="Secundária" />
+            <input name="cor_accent" value="#CC0000" class="rounded-xl border px-3 py-2" title="Accent" />
+          </div>
+          <input name="template_slug" value="generico" class="w-full rounded-xl border px-3 py-2" />
+          <input type="file" name="brasao" accept=".png,.jpg,.jpeg,.webp" class="w-full rounded-xl border px-3 py-2" />
+          <button class="ui-btn ui-btn--brand">Criar clube</button>
+        </form>
+        <form method="post" action="{{ url_for('super_admin.assign_director') }}" class="bg-white rounded-3xl p-6 shadow space-y-3">
+          <h2 class="text-lg font-semibold">Vincular diretor existente</h2>
+          <input name="email" type="email" placeholder="E-mail de usuário existente" required class="w-full rounded-xl border px-3 py-2" />
+          <input name="nome_completo" placeholder="Nome completo (opcional)" class="w-full rounded-xl border px-3 py-2" />
+          <select name="clube_id" required class="w-full rounded-xl border px-3 py-2">
+            <option value="">Selecione o clube</option>
+            {% for c in clubs %}
+            <option value="{{ c.id }}">{{ c.nome }}</option>
+            {% endfor %}
+          </select>
+          <button class="ui-btn ui-btn--brand">Vincular diretor</button>
+        </form>
+      </section>
+
+      <section class="bg-white rounded-3xl p-6 shadow">
+        <h2 class="text-lg font-semibold mb-3">Clubes cadastrados</h2>
+        <div class="space-y-3">
+          {% for c in clubs %}
+          <div class="border rounded-2xl p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                {% if c.brasao_url %}
+                <img src="{{ c.brasao_url }}" alt="" class="h-14 w-14 rounded-xl object-contain bg-slate-50 p-1 shrink-0" />
+                {% else %}
+                <img src="{{ url_for('static', filename='img/brasao-desbravadores-oficial.png') }}" alt="" class="h-14 w-14 rounded-xl object-contain bg-slate-50 p-1 shrink-0" />
+                {% endif %}
+                <div class="min-w-0">
+                  <p class="font-semibold truncate">{{ c.nome }}</p>
+                  <p class="text-sm text-slate-600">{{ c.cidade or "-" }} / {{ c.regiao or "-" }}</p>
+                  <p class="text-xs text-slate-500">Template: {{ c.template_slug }}</p>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2 justify-end">
+                {% set dir_uid = club_director_user_ids.get(c.id) %}
+                {% if dir_uid %}
+                <form method="post" action="{{ url_for('super_admin.enter_as_director', user_id=dir_uid) }}">
+                  <button type="submit" class="ui-btn ui-btn--outline text-sm">Entrar como admin</button>
+                </form>
+                {% else %}
+                <a href="{{ url_for('admin.dashboard', clube_id=c.id) }}" class="ui-btn ui-btn--outline text-sm">Abrir /admin deste clube</a>
+                {% endif %}
+                {% if c.brasao_url %}
+                <form method="post" action="{{ url_for('super_admin.remove_brasao', clube_id=c.id) }}">
+                  <button type="submit" class="ui-btn ui-btn--text">Remover brasão</button>
+                </form>
+                {% endif %}
+                {% if c.template_slug != 'duque_de_caxias' %}
+                <form method="post" action="{{ url_for('super_admin.delete_club', clube_id=c.id) }}" onsubmit="return confirm('Excluir este clube permanentemente? Só é permitido se não houver usuários vinculados.');">
+                  <button type="submit" class="ui-btn ui-btn--danger-soft">Excluir clube</button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+            <details class="border-t border-slate-100 pt-3">
+              <summary class="cursor-pointer text-sm font-semibold text-blue-800">Editar clube</summary>
+              <form method="post" action="{{ url_for('super_admin.update_club', clube_id=c.id) }}" enctype="multipart/form-data" class="mt-3 grid sm:grid-cols-2 gap-3 text-sm">
+                <div class="sm:col-span-2">
+                  <label class="block text-slate-600 mb-1">Nome *</label>
+                  <input name="nome" value="{{ c.nome }}" required class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-slate-600 mb-1">Descrição</label>
+                  <textarea name="descricao" rows="2" class="w-full rounded-xl border px-3 py-2">{{ c.descricao or '' }}</textarea>
+                </div>
+                <div>
+                  <label class="block text-slate-600 mb-1">Cidade</label>
+                  <input name="cidade" value="{{ c.cidade or '' }}" class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-slate-600 mb-1">Região</label>
+                  <input name="regiao" value="{{ c.regiao or '' }}" class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-slate-600 mb-1">Título do sistema</label>
+                  <input name="titulo_sistema" value="{{ c.titulo_sistema or '' }}" class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-slate-600 mb-1">Cor primária</label>
+                  <input name="cor_primaria" value="{{ c.cor_primaria or '#003580' }}" class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-slate-600 mb-1">Cor secundária</label>
+                  <input name="cor_secundaria" value="{{ c.cor_secundaria or '#FFD700' }}" class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-slate-600 mb-1">Cor destaque</label>
+                  <input name="cor_accent" value="{{ c.cor_accent or '#CC0000' }}" class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                {% if c.template_slug != 'duque_de_caxias' %}
+                <div>
+                  <label class="block text-slate-600 mb-1">Template slug</label>
+                  <input name="template_slug" value="{{ c.template_slug }}" class="w-full rounded-xl border px-3 py-2" />
+                </div>
+                {% endif %}
+                <div class="sm:col-span-2">
+                  <label class="block text-slate-600 mb-1">Brasão do clube (portal após o login)</label>
+                  <input type="file" name="brasao" accept=".png,.jpg,.jpeg,.webp" class="w-full rounded-xl border px-3 py-2" />
+                  <p class="text-xs text-slate-500 mt-1">A tela de login público mantém sempre o emblema oficial da associação.</p>
+                </div>
+                <div class="sm:col-span-2">
+                  <button type="submit" class="ui-btn ui-btn--brand">Salvar alterações</button>
+                </div>
+              </form>
+            </details>
+          </div>
+          {% else %}
+          <p class="text-slate-600">Nenhum clube cadastrado.</p>
+          {% endfor %}
+        </div>
+      </section>
+      <section class="bg-white rounded-3xl p-6 shadow">
+        <h2 class="text-lg font-semibold mb-3">Diretores cadastrados</h2>
+        <form method="get" action="{{ url_for('super_admin.dashboard') }}" class="grid md:grid-cols-3 gap-3 mb-4">
+          <select name="clube_id" class="rounded-xl border px-3 py-2">
+            <option value="">Todos os clubes</option>
+            {% for c in clubs %}
+            <option value="{{ c.id }}" {% if selected_club_id == c.id %}selected{% endif %}>{{ c.nome }}</option>
+            {% endfor %}
+          </select>
+          <input
+            name="q"
+            value="{{ search }}"
+            placeholder="Buscar diretor por nome ou e-mail"
+            class="rounded-xl border px-3 py-2"
+          />
+          <div class="flex gap-2">
+            <button class="ui-btn ui-btn--brand w-full">Filtrar</button>
+            <a href="{{ url_for('super_admin.dashboard') }}" class="ui-btn ui-btn--text w-full text-center">Limpar</a>
+          </div>
+        </form>
+        <div class="space-y-4">
+          {% for dir_user, profile, club in directors %}
+          <div class="border rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="flex flex-wrap items-start gap-4 min-w-0">
+              <div>
+                <p class="font-semibold text-slate-900">{{ dir_user.full_name or "Diretor" }}</p>
+                <p class="text-sm text-slate-600 break-all">{{ dir_user.email }}</p>
+              </div>
+              <div class="text-sm text-slate-700">
+                <span class="font-medium">Clube:</span>
+                <span>{{ club.nome if club else "Não vinculado" }}</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 justify-start lg:justify-end shrink-0">
+              <form
+                method="post"
+                action="{{ url_for('super_admin.remove_director', user_id=dir_user.id) }}"
+                onsubmit="return confirm('Desvincular este diretor? A conta volta a ser apenas de responsável (perde acesso de diretoria).');"
+              >
+                <button type="submit" class="ui-btn ui-btn--brand text-sm">Desvincular diretor</button>
+              </form>
+              <form
+                method="post"
+                action="{{ url_for('super_admin.delete_director_account', user_id=dir_user.id) }}"
+                onsubmit="return confirm('Excluir esta conta permanentemente? Só é possível se não houver filhos ou publicações vinculadas.');"
+              >
+                <button type="submit" class="ui-btn ui-btn--danger-soft text-sm">Excluir conta</button>
+              </form>
+            </div>
+          </div>
+          {% else %}
+          <p class="text-slate-600">Nenhum diretor vinculado ainda.</p>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -53,6 +53,12 @@ Ordem de import em **`app.css`**:
 
 Campos removidos da modelagem atual: ficha escolar detalhada, RG/CPF interno, endereço, data de nascimento e vínculo com usuário admin — reduzem ruído; o que for institucional pode ir na **bio** ou na ficha dos **desbravadores**.
 
+## Multi-clube e templates
+
+- O projeto mantém um clube-base **Duque de Caxias** (`template_slug = duque_de_caxias`) como referência visual e funcional.
+- Novos clubes devem usar o template **genérico** (`template_slug = generico`) e preencher nome, brasão e paleta.
+- A tabela `perfis` guarda `cargo` e `clube_id`, permitindo guards por hierarquia e clube.
+
 ## Rotas principais
 
 | Prefixo    | Público-alvo |

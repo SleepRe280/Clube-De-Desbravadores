@@ -1,0 +1,44 @@
+{% extends "club/base_director_shell.html" %}
+{% block title %}Conselheiros{% endblock %}
+{% block mobile_title %}Conselheiros{% endblock %}
+{% block director_top_hint %}Acompanhamento operacional e leitura da gestão.{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-7xl space-y-8">
+  <header class="space-y-2">
+    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9ca3af]">{{ club.nome }}</p>
+    <p class="text-sm font-medium text-teal-300">Função: Conselheiro(a)</p>
+    <h1 class="text-2xl font-bold tracking-tight text-[#f4f4f8] sm:text-3xl">Painel do conselheiro</h1>
+    <p class="max-w-3xl text-sm leading-relaxed text-[#9ca3af]">
+      Acompanhamento operacional: fichas, presença, publicações e equipe da diretoria (somente leitura).
+      <strong class="text-[#e5e7eb]">Sem finanças</strong>, sem cadastro de agenda, sem novo/excluir desbravadores e sem gestão de cargos.
+    </p>
+  </header>
+  <p class="text-sm text-[#d1d5db]">Desbravadores no clube: <strong class="text-[#f4f4f8]">{{ n_members }}</strong></p>
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <a href="{{ url_for('admin.members', clube_id=club.id) }}" class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-4 shadow-xl shadow-black/10 transition hover:border-teal-500/40">
+      <span class="font-semibold text-[#f4f4f8]">Membros</span>
+      <p class="mt-1 text-xs text-[#9ca3af]">Consultar e abrir fichas</p>
+    </a>
+    <a href="{{ url_for('admin.directorate_list', clube_id=club.id) }}" class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-4 shadow-xl shadow-black/10 transition hover:border-teal-500/40">
+      <span class="font-semibold text-[#f4f4f8]">Equipe da diretoria</span>
+      <p class="mt-1 text-xs text-[#9ca3af]">Ver liderança (sem gerir)</p>
+    </a>
+    <a href="{{ url_for('admin.agenda_list', clube_id=club.id) }}" class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-4 shadow-xl shadow-black/10 transition hover:border-teal-500/40">
+      <span class="font-semibold text-[#f4f4f8]">Agenda</span>
+      <p class="mt-1 text-xs text-[#9ca3af]">Somente leitura</p>
+    </a>
+    <a href="{{ url_for('admin.attendance_overview', clube_id=club.id) }}" class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-4 shadow-xl shadow-black/10 transition hover:border-teal-500/40">
+      <span class="font-semibold text-[#f4f4f8]">Presenças</span>
+      <p class="mt-1 text-xs text-[#9ca3af]">Registrar onde permitido</p>
+    </a>
+    <a href="{{ url_for('admin.parents_list', clube_id=club.id) }}" class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-4 shadow-xl shadow-black/10 transition hover:border-teal-500/40">
+      <span class="font-semibold text-[#f4f4f8]">Responsáveis</span>
+      <p class="mt-1 text-xs text-[#9ca3af]">Vínculos (sem excluir contas)</p>
+    </a>
+    <a href="{{ url_for('admin.posts', clube_id=club.id) }}" class="rounded-2xl border border-[#2a2a3a] bg-[#1a1a26] p-4 shadow-xl shadow-black/10 transition hover:border-teal-500/40">
+      <span class="font-semibold text-[#f4f4f8]">Publicações</span>
+      <p class="mt-1 text-xs text-[#9ca3af]">Comunicados e mural (gestão completa)</p>
+    </a>
+  </div>
+</div>
+{% endblock %}

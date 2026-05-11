@@ -1,137 +1,144 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}Painel{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
 {% block content %}
-<header class="dash-header">
-  <div>
-    <p class="dash-header__kicker">Diretoria</p>
-    <h1 class="dash-header__title">Painel de gestão</h1>
-    <p class="dash-header__sub">
-      Visão geral com os totais de desbravadores, diretoria e responsáveis matriculados.
-    </p>
-  </div>
-  <p class="dash-header__time" id="dash-now" aria-live="polite">
-    <span class="dash-time-dot" aria-hidden="true"></span>
-    <span class="js-dash-date" data-dash-date-fallback></span>
-  </p>
-</header>
+{% set greeting_name = current_user.full_name or current_user.email or 'Direção' %}
+<div class="mx-auto max-w-7xl space-y-6">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Bem-vindo, {{ greeting_name }}!</h1>
+    <p class="text-sm text-slate-600">Aqui está o resumo do clube <span class="font-medium text-violet-700">{{ active_club.nome if active_club else "Diretoria" }}</span>.</p>
+  </header>
 
-<section class="dash-kpi-grid" aria-label="Indicadores principais">
-  <article class="dash-kpi dash-kpi--m">
-    <p class="dash-kpi__label">Desbravadores</p>
-    <p class="dash-kpi__value">{{ n_members }}</p>
-    <a class="dash-kpi__link ui-link" href="{{ url_for('admin.members') }}">Abrir cadastro</a>
-  </article>
-  <article class="dash-kpi dash-kpi--p">
-    <p class="dash-kpi__label">Responsáveis</p>
-    <p class="dash-kpi__value">{{ n_parents }}</p>
-    <a class="dash-kpi__link ui-link" href="{{ url_for('admin.parents_list') }}">Vínculos e contas</a>
-  </article>
-  <article class="dash-kpi dash-kpi--d">
-    <p class="dash-kpi__label">Diretoria</p>
-    <p class="dash-kpi__value">{{ n_dir }}</p>
-    <a class="dash-kpi__link ui-link" href="{{ url_for('admin.directorate_list') }}">Equipe e cargos</a>
-  </article>
-</section>
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Desbravadores</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ dash.n_members }}</p>
+      <p class="mt-2 text-xs text-violet-700">Cadastro ativo no clube</p>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Equipe no site</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ dash.n_directorate }}</p>
+      <p class="mt-2 text-xs text-sky-700">Membros na página da diretoria</p>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Comunicados</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ dash.n_posts }}</p>
+      <p class="mt-2 text-xs text-emerald-700">Publicações no mural</p>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Eventos</p>
+      <p class="mt-2 text-3xl font-bold text-slate-900">{{ dash.n_upcoming }}</p>
+      <p class="mt-2 text-xs text-amber-700">Próximos na agenda</p>
+    </div>
+  </section>
 
-<div class="dash-charts" aria-label="Atalhos da diretoria">
-  <div class="dash-panel">
-    <div class="dash-panel__head">
-      <h2 class="dash-panel__title">Cadastros e gestão</h2>
-      <p class="dash-panel__hint">Acesso rápido às áreas principais</p>
-    </div>
-    <div class="dash-dir-grid">
-      <a href="{{ url_for('admin.members') }}" class="dash-dir-card no-underline">
-        <span class="dash-avatar dash-avatar--ph" aria-hidden="true">👥</span>
-        <div>
-          <p class="dash-dir-card__name">Desbravadores</p>
-          <p class="dash-dir-card__role">Cadastro e acompanhamento</p>
-        </div>
-      </a>
-      <a href="{{ url_for('admin.directorate_list') }}" class="dash-dir-card no-underline">
-        <span class="dash-avatar dash-avatar--ph" aria-hidden="true">✦</span>
-        <div>
-          <p class="dash-dir-card__name">Diretoria</p>
-          <p class="dash-dir-card__role">Equipe e cargos</p>
-        </div>
-      </a>
-      <a href="{{ url_for('admin.parents_list') }}" class="dash-dir-card no-underline">
-        <span class="dash-avatar dash-avatar--ph" aria-hidden="true">👪</span>
-        <div>
-          <p class="dash-dir-card__name">Responsáveis</p>
-          <p class="dash-dir-card__role">Contas e vínculos</p>
-        </div>
-      </a>
-      <a href="{{ url_for('admin.finance_dashboard') }}" class="dash-dir-card no-underline">
-        <span class="dash-avatar dash-avatar--ph" aria-hidden="true">💰</span>
-        <div>
-          <p class="dash-dir-card__name">Financeiro</p>
-          <p class="dash-dir-card__role">Relatórios e cobranças</p>
-        </div>
-      </a>
-    </div>
-  </div>
-  <div class="dash-panel">
-    <div class="dash-panel__head">
-      <h2 class="dash-panel__title">Resumo rápido</h2>
-      <p class="dash-panel__hint">Mantido simples para evitar poluição visual</p>
-    </div>
-    <div class="space-y-3">
-      <div class="dash-dir-card">
-        <span class="dash-avatar dash-avatar--ph" aria-hidden="true">M</span>
-        <div>
-          <p class="dash-dir-card__name">Desbravadores matriculados</p>
-          <p class="dash-dir-card__role">{{ n_members }} registros</p>
-        </div>
+  <section class="grid gap-6 lg:grid-cols-5">
+    <div class="lg:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-lg font-semibold text-slate-900">Presenças no mês</h2>
+        <p class="text-xs text-slate-500">Registros marcados como presentes por dia</p>
       </div>
-      <div class="dash-dir-card">
-        <span class="dash-avatar dash-avatar--ph" aria-hidden="true">D</span>
-        <div>
-          <p class="dash-dir-card__name">Membros da diretoria</p>
-          <p class="dash-dir-card__role">{{ n_dir }} registros</p>
-        </div>
+      <div class="relative min-h-[240px]"><canvas id="chartAttendance" aria-label="Gráfico de presenças"></canvas></div>
+    </div>
+    <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="text-lg font-semibold text-slate-900">Desbravadores por unidade</h2>
+      <p class="text-xs text-slate-500">Distribuição cadastral</p>
+      <div class="relative mt-4 min-h-[220px]"><canvas id="chartUnits" aria-label="Gráfico por unidade"></canvas></div>
+      <div id="chartUnitsLegend" class="mt-4 space-y-2 text-xs text-slate-700"></div>
+    </div>
+  </section>
+
+  <section class="grid gap-6 lg:grid-cols-3">
+    <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div class="border-b border-slate-200 px-5 py-4">
+        <h2 class="text-lg font-semibold text-slate-900">Desbravadores recentes</h2>
       </div>
-      <div class="dash-dir-card">
-        <span class="dash-avatar dash-avatar--ph" aria-hidden="true">R</span>
-        <div>
-          <p class="dash-dir-card__name">Responsáveis cadastrados</p>
-          <p class="dash-dir-card__role">{{ n_parents }} registros</p>
-        </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead class="bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+            <tr><th class="px-4 py-3">Nome</th><th class="px-4 py-3">Unidade</th><th class="px-4 py-3 text-right">Desempenho</th><th class="px-4 py-3 text-right">Presença</th></tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-800">
+            {% for m in dash.recent_members %}
+            {% set _st = m.attendance_stats() %}
+            <tr>
+              <td class="px-4 py-3 font-medium">{{ m.full_name }}</td>
+              <td class="px-4 py-3 text-slate-500">{{ m.unit or '—' }}</td>
+              <td class="px-4 py-3 text-right">{{ m.overall_performance or m.computed_overall_performance() or 0 }}%</td>
+              <td class="px-4 py-3 text-right text-emerald-700">{{ _st[2] }}%</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">Nenhum desbravador cadastrado.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
-  </div>
-</div>
-
-<div class="dash-two-col">
-  <div class="dash-panel">
-    <div class="dash-panel__head">
-      <h2 class="dash-panel__title">Atalhos operacionais</h2>
-      <p class="dash-panel__hint">Fluxo rápido para a rotina</p>
+    <div class="space-y-6">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Próximos eventos</h2>
+        <ul class="mt-4 space-y-3 text-sm text-slate-700">
+          {% for ev in dash.upcoming_events %}
+          <li>{{ ev.event_date.strftime('%d/%m/%Y') }} — {{ ev.title }}</li>
+          {% else %}
+          <li>Nenhum evento futuro na agenda.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-900">Atividades recentes</h2>
+        <ul class="mt-4 space-y-3 text-sm text-slate-700">
+          {% for act in dash.recent_activities %}
+          <li><span class="font-medium text-slate-900">{{ act.member_name }}</span> — {{ act.title }}</li>
+          {% else %}
+          <li>Sem registros de atividades.</li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
-    <div class="dash-foot-links">
-      <a href="{{ url_for('admin.member_new') }}" class="ui-btn ui-btn--outline ui-btn--sm">Novo desbravador</a>
-      <a href="{{ url_for('admin.directorate_new') }}" class="ui-btn ui-btn--outline ui-btn--sm">Novo diretor</a>
-      <a href="{{ url_for('admin.agenda_new') }}" class="ui-btn ui-btn--outline ui-btn--sm">Novo evento</a>
-      <a href="{{ url_for('admin.post_new') }}" class="ui-btn ui-btn--outline ui-btn--sm">Novo aviso</a>
-    </div>
-  </div>
-  <div class="dash-panel">
-    <div class="dash-panel__head">
-      <h2 class="dash-panel__title">Separação por abas</h2>
-    </div>
-    <p class="dash-empty">
-      Os gráficos e informações financeiras foram direcionados para a aba <strong>Financeiro</strong>.
-    </p>
-  </div>
+  </section>
 </div>
 {% endblock %}
 
 {% block page_scripts %}
 <script>
   (function () {
-    var fallbackDate = document.querySelector("[data-dash-date-fallback]");
-    if (fallbackDate) {
-      var opt = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-      fallbackDate.textContent = new Date().toLocaleDateString("pt-BR", opt);
+    if (!window.Chart) return;
+    const att = document.getElementById("chartAttendance");
+    if (att) {
+      new Chart(att, {
+        type: "line",
+        data: {
+          labels: {{ dash.attendance_labels | tojson }},
+          datasets: [{ label: "Presenças", data: {{ dash.attendance_counts | tojson }}, borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,.15)", fill: true, tension: .35, pointRadius: 0 }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#64748b" } } },
+          scales: { x: { ticks: { color: "#64748b" }, grid: { color: "rgba(15,23,42,.08)" } }, y: { ticks: { color: "#64748b", precision: 0 }, grid: { color: "rgba(15,23,42,.08)" } } }
+        }
+      });
+    }
+    const uLabels = {{ dash.unit_labels | tojson }};
+    const uCounts = {{ dash.unit_counts | tojson }};
+    const units = document.getElementById("chartUnits");
+    const palette = ["#8b5cf6", "#38bdf8", "#34d399", "#fbbf24", "#fb7185", "#a78bfa"];
+    if (units && uCounts.length) {
+      new Chart(units, { type: "doughnut", data: { labels: uLabels, datasets: [{ data: uCounts, backgroundColor: uLabels.map((_, i) => palette[i % palette.length]), borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: "68%", plugins: { legend: { display: false } } } });
+      const total = uCounts.reduce((a, b) => a + b, 0);
+      const legend = document.getElementById("chartUnitsLegend");
+      if (legend) {
+        uLabels.forEach((lab, i) => {
+          const n = uCounts[i];
+          const pct = total ? Math.round((100 * n) / total) : 0;
+          const row = document.createElement("div");
+          row.className = "flex items-center justify-between gap-2";
+          row.innerHTML = `<span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm" style="background:${palette[i % palette.length]}"></span>${lab}</span><span>${n} <span class="text-slate-500">(${pct}%)</span></span>`;
+          legend.appendChild(row);
+        });
+      }
     }
   })();
 </script>

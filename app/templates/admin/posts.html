@@ -2,52 +2,39 @@
 {% block title %}Publicações{% endblock %}
 {% block content %}
 <div class="flex items-center justify-between flex-wrap gap-4">
-  <h1 class="text-2xl font-bold">Comunicados da diretoria</h1>
-  <a href="{{ url_for('admin.post_new') }}" class="ui-btn ui-btn--brand">Nova publicação</a>
+  <h1 class="text-2xl font-bold text-slate-900">Publicações</h1>
+  <a href="{{ url_for('admin.post_new', **admin_nav_kw) }}" class="ui-btn ui-btn--brand">Nova publicação</a>
 </div>
-<p class="text-slate-600 text-sm mt-2">Avisos do clube e notícias dos Desbravadores em uma única tela.</p>
+<p class="text-slate-600 text-sm mt-2">Comunicados e notícias em um único mural. Os responsáveis veem tudo no portal família.</p>
+{% set level_map = dict(levels) %}
 <ul class="mt-6 space-y-3">
   {% for p in posts %}
   <li class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
     <div class="min-w-0 flex-1">
-      <h2 class="font-semibold text-lg">{{ p.title }}</h2>
+      <div class="flex flex-wrap items-center gap-2 mb-2">
+        {% if p.post_kind == 'noticia' %}
+        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">Notícia</span>
+        <span class="text-[10px] font-medium text-slate-500">{{ level_map.get(p.level, p.level or '—') }}</span>
+        {% else %}
+        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">Comunicado</span>
+        {% endif %}
+      </div>
+      <h2 class="font-semibold text-lg text-slate-900">{{ p.title }}</h2>
       <p class="text-xs text-slate-400 mt-1">{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
-      <p class="text-slate-700 text-sm mt-3 whitespace-pre-line">{{ p.body[:400] }}{% if p.body|length > 400 %}…{% endif %}</p>
+      <p class="text-slate-700 text-sm mt-3 whitespace-pre-line line-clamp-4">{{ p.body }}</p>
     </div>
-    <form method="post" action="{{ url_for('admin.post_delete', post_id=p.id) }}" class="shrink-0" onsubmit="return confirm('Excluir esta publicação? Os responsáveis deixarão de vê-la.');">
-      <button type="submit" class="ui-btn ui-btn--danger-soft">Excluir</button>
-    </form>
-  </li>
-  {% else %}
-  <li class="text-slate-500">Nenhuma publicação.</li>
-  {% endfor %}
-</ul>
-
-{% set level_map = dict(levels) %}
-<div class="flex items-center justify-between flex-wrap gap-4 mt-10">
-  <h2 class="text-xl font-bold text-slate-900">Notícias dos Desbravadores</h2>
-  <a href="{{ url_for('admin.club_news_new') }}" class="ui-btn ui-btn--info">Nova notícia</a>
-</div>
-<ul class="mt-4 space-y-3">
-  {% for n in news_list %}
-  <li class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-    <div class="min-w-0">
-      <span
-        class="text-xs font-bold uppercase px-2 py-0.5 rounded-full {% if n.level == 'mundial' %}bg-indigo-100 text-indigo-800{% elif n.level == 'estadual' %}bg-blue-100 text-blue-800{% elif n.level == 'regional' %}bg-green-100 text-green-800{% else %}bg-amber-100 text-amber-900{% endif %}"
-        >{{ level_map.get(n.level, n.level) }}</span
-      >
-      <h3 class="font-semibold text-slate-900 mt-2">{{ n.title }}</h3>
-      <p class="text-xs text-slate-400 mt-1">{{ n.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
-    </div>
-    <div class="flex gap-2 items-start shrink-0">
-      <a href="{{ url_for('admin.club_news_edit', nid=n.id) }}" class="ui-btn ui-btn--sm ui-btn--outline">Editar</a>
-      <form method="post" action="{{ url_for('admin.club_news_delete', nid=n.id) }}" onsubmit="return confirm('Excluir?');">
-        <button type="submit" class="ui-btn ui-btn--sm ui-btn--danger-soft">Excluir</button>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <a href="{{ url_for('admin.post_edit', pid=p.id, **admin_nav_kw) }}" class="ui-btn ui-btn--outline ui-btn--sm">Editar</a>
+      <form method="post" action="{{ url_for('admin.post_delete', post_id=p.id) }}" onsubmit="return confirm('Excluir esta publicação?');">
+        {% if admin_scope_clube_id %}
+        <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+        {% endif %}
+        <button type="submit" class="ui-btn ui-btn--danger-soft ui-btn--sm">Excluir</button>
       </form>
     </div>
   </li>
   {% else %}
-  <li class="text-slate-500">Nenhuma notícia.</li>
+  <li class="text-slate-500">Nenhuma publicação ainda.</li>
   {% endfor %}
 </ul>
 {% endblock %}

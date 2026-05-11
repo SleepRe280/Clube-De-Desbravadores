@@ -3,6 +3,9 @@
 {% block content %}
 <h1 class="text-2xl font-bold">{% if ev %}Editar evento{% else %}Novo evento na agenda{% endif %}</h1>
 <form method="post" class="mt-6 max-w-xl space-y-4 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+  {% if request.args.get('clube_id') %}
+  <input type="hidden" name="clube_id" value="{{ request.args.get('clube_id') }}" />
+  {% endif %}
   <div>
     <label class="block text-sm font-medium text-slate-700 mb-1">Título *</label>
     <input name="title" required value="{{ ev.title if ev else '' }}" class="w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -21,7 +24,7 @@
   </div>
   <div class="flex flex-wrap gap-3">
     <button type="submit" class="ui-btn ui-btn--indigo">Salvar</button>
-    <a href="{{ url_for('admin.agenda_list', year=back_year, month=back_month) }}" class="ui-btn ui-btn--outline">Voltar ao calendário</a>
+    <a href="{{ url_for('admin.agenda_list', year=back_year, month=back_month, **admin_nav_kw) }}" class="ui-btn ui-btn--outline">Voltar ao calendário</a>
   </div>
 </form>
 {% endblock %}

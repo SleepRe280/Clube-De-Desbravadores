@@ -13,21 +13,28 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
       rel="stylesheet"
     />
+    <style>
+      :root {
+        --club-primary: {{ theme_colors.primary }};
+        --club-secondary: {{ theme_colors.secondary }};
+        --club-accent: {{ theme_colors.accent }};
+      }
+    </style>
   </head>
   <body class="parent-app antialiased flex flex-col min-h-[100dvh] text-[var(--text-primary)] {% block parent_body_class %}{% endblock %}">
     <header class="parent-header shrink-0 z-30">
       <div class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
         <a href="{{ url_for('parent.home') }}" class="flex items-center gap-3 min-w-0 group">
           <img
-            src="{{ url_for('static', filename='img/portal-logo-desbravadores.png') }}"
+            src="{{ club_logo_src }}"
             width="48"
             height="48"
-            alt="Desbravadores"
+            alt=""
             class="h-11 w-11 sm:h-12 sm:w-12 shrink-0 object-contain rounded-2xl bg-white/95 shadow-lg shadow-slate-900/10 ring-2 ring-white/90"
           />
           <span class="hidden sm:block min-w-0 text-left">
-            <span class="block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Desbravadores</span>
-            <span class="block text-sm font-medium text-slate-700">Portal família</span>
+            <span class="block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Clube de Desbravadores</span>
+            <span class="block text-sm font-medium text-slate-700">{{ active_club.nome if active_club else "Portal família" }}</span>
           </span>
         </a>
 

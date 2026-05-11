@@ -12,6 +12,9 @@
     Esta chave aparece na área financeira do portal família para os responsáveis pagarem mensalidades e cobranças. Ao salvar uma nova chave, ela substitui a anterior para todos os pais.
   </p>
   <form method="post" action="{{ url_for('admin.finance_pix_key_save') }}" class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-end">
+    {% if admin_scope_clube_id %}
+    <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+    {% endif %}
     <div class="flex-1 min-w-0">
       <label for="pix_key" class="block text-xs font-medium text-slate-600 mb-1">Chave PIX (CPF, e-mail, telefone ou chave aleatória)</label>
       <input id="pix_key" name="pix_key" type="text" value="{{ pix_key }}" maxlength="500" autocomplete="off" placeholder="ex.: nome@email.com ou 11999999999" class="w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm" />
@@ -63,6 +66,9 @@
   <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
     <h2 class="font-semibold text-slate-900 mb-4">Novo lançamento no caixa</h2>
     <form method="post" action="{{ url_for('admin.finance_ledger_add') }}" class="space-y-3">
+      {% if admin_scope_clube_id %}
+      <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+      {% endif %}
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Tipo</label>
         <select name="direction" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
@@ -102,6 +108,9 @@
   <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
     <h2 class="font-semibold text-slate-900 mb-4">Nova cobrança (mensalidade)</h2>
     <form method="post" action="{{ url_for('admin.finance_fee_add') }}" class="space-y-3">
+      {% if admin_scope_clube_id %}
+      <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+      {% endif %}
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Desbravador</label>
         <select name="member_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
@@ -158,9 +167,15 @@
         </td>
         <td class="py-2 flex flex-wrap gap-2">
           <form method="post" action="{{ url_for('admin.finance_fee_mark_paid', fid=f.id) }}" class="inline">
+            {% if admin_scope_clube_id %}
+            <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+            {% endif %}
             <button type="submit" class="ui-btn ui-btn--success ui-btn--sm">Marcar pago</button>
           </form>
           <form method="post" action="{{ url_for('admin.finance_fee_delete', fid=f.id) }}" class="inline" onsubmit="return confirm('Excluir esta cobrança?');">
+            {% if admin_scope_clube_id %}
+            <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+            {% endif %}
             <button type="submit" class="ui-btn ui-btn--text-danger ui-btn--sm">Excluir</button>
           </form>
         </td>
@@ -197,6 +212,9 @@
         <td class="py-2 pr-3 text-slate-500">{{ row.category or '—' }}</td>
         <td class="py-2">
           <form method="post" action="{{ url_for('admin.finance_ledger_delete', lid=row.id) }}" onsubmit="return confirm('Excluir este lançamento?');">
+            {% if admin_scope_clube_id %}
+            <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+            {% endif %}
             <button type="submit" class="ui-btn ui-btn--text-danger ui-btn--sm">Excluir</button>
           </form>
         </td>

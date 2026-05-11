@@ -6,7 +6,7 @@
     <h1 class="text-2xl font-bold">Presenças — visão geral</h1>
     <p class="text-slate-600 text-sm mt-1">Taxa de presença e última reunião registrada por membro.</p>
   </div>
-  <a href="{{ url_for('admin.members') }}" class="text-sm text-blue-600 hover:underline">Ir para desbravadores</a>
+  <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="text-sm text-blue-600 hover:underline">Ir para desbravadores</a>
 </div>
 <div class="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
   <table class="min-w-full text-sm">
@@ -49,7 +49,16 @@
           {{ row.last_meeting.strftime('%d/%m/%Y') if row.last_meeting else '—' }}
         </td>
         <td class="px-4 py-3 text-right">
-          <a href="{{ url_for('admin.member_attendance', id=m.id) }}" class="text-blue-600 hover:underline">Gerir</a>
+          <a
+            href="{{ url_for('admin.member_attendance', id=m.id, **admin_nav_kw) }}"
+            class="ui-btn ui-btn--sm ui-btn--accent-sky inline-flex items-center gap-1.5"
+            title="Abrir presenças"
+          >
+            <svg class="w-3.5 h-3.5 shrink-0 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Gerir
+          </a>
         </td>
       </tr>
       {% else %}
