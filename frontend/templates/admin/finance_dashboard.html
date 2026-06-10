@@ -1,0 +1,265 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Financeiro{% endblock %}
+{% block header_sub %}Gestão financeira do clube — caixa, mensalidades e PIX{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/finance-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set s = fin.summary %}
+<div id="fn-app" class="fn-page ap-animate-in">
+  <header class="fn-page-head">
+    <div>
+      <h1>Financeiro do clube</h1>
+      <p>Caixa, mensalidades, cobranças e comprovantes — tudo sincronizado com o portal das famílias.</p>
+    </div>
+    <div class="fn-head-actions">
+      {% if can_write_finance %}
+      <button type="button" class="fn-btn fn-btn--gold" id="fn-btn-ledger">+ Novo lançamento</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <section class="fn-hero" aria-label="Resumo financeiro">
+    <article class="fn-kpi">
+      <span class="fn-kpi__icon">💰</span>
+      <p class="fn-kpi__label">Saldo atual em caixa</p>
+      <p class="fn-kpi__value">{{ format_brl(s.balance_cents) }}</p>
+      <p class="fn-kpi__meta">{% if s.cash_status == 'positivo' %}Caixa saudável{% else %}Atenção ao fluxo{% endif %}</p>
+    </article>
+    <article class="fn-kpi">
+      <span class="fn-kpi__icon">↓</span>
+      <p class="fn-kpi__label">Entradas (mês)</p>
+      <p class="fn-kpi__value">{{ format_brl(s.month_in_cents) }}</p>
+      {% if s.month_in_delta_pct is not none %}
+      <p class="fn-kpi__meta fn-kpi__meta--{% if s.month_in_delta_pct >= 0 %}up{% else %}down{% endif %}">{{ s.month_in_delta_pct }}% vs mês anterior</p>
+      {% endif %}
+    </article>
+    <article class="fn-kpi">
+      <span class="fn-kpi__icon">↑</span>
+      <p class="fn-kpi__label">Saídas (mês)</p>
+      <p class="fn-kpi__value">{{ format_brl(s.month_out_cents) }}</p>
+      {% if s.month_out_delta_pct is not none %}
+      <p class="fn-kpi__meta fn-kpi__meta--{% if s.month_out_delta_pct <= 0 %}up{% else %}down{% endif %}">{{ s.month_out_delta_pct }}% vs mês anterior</p>
+      {% endif %}
+    </article>
+    <article class="fn-kpi">
+      <span class="fn-kpi__icon">⏱</span>
+      <p class="fn-kpi__label">Mensalidades pendentes</p>
+      <p class="fn-kpi__value">{{ format_brl(s.pending_cents) }}</p>
+      <p class="fn-kpi__meta">{{ s.pending_count }} cobrança(s) · {{ s.overdue_count }} vencida(s)</p>
+    </article>
+  </section>
+
+  <div class="fn-grid">
+    <div class="fn-col">
+      <div class="fn-card">
+        <div class="fn-card__head">
+          <h2 class="fn-card__title">Fluxo financeiro</h2>
+          <span class="text-xs text-slate-400">Últimos 6 meses</span>
+        </div>
+        <div class="fn-chart-wrap">
+          <canvas id="fn-flow-chart" aria-label="Gráfico de fluxo"></canvas>
+        </div>
+        <script id="fn-flow-data" type="application/json">{{ fin.flow | tojson }}</script>
+      </div>
+
+      <div class="fn-card" style="margin-top:1rem">
+        <div class="fn-card__head fn-card__head--wrap">
+          <div>
+            <h2 class="fn-card__title">Mensalidades</h2>
+            <p class="fn-card__hint">Ao lançar, não entra no caixa. Botão <strong>Paga</strong> (ao lado de Excluir) confirma o recebimento e soma o valor ao caixa.</p>
+          </div>
+          {% if can_write_finance %}
+          <div class="fn-card__head-actions">
+            <button type="button" class="fn-card__link" id="fn-btn-bulk" style="background:none;border:none;cursor:pointer">Gerar p/ todos</button>
+            <button type="button" class="fn-card__link" id="fn-btn-fee" style="background:none;border:none;cursor:pointer">+ Nova cobrança</button>
+          </div>
+          {% endif %}
+        </div>
+        <div class="fn-fee-bar">
+          <div class="fn-fee-stat fn-fee-stat--paid"><strong>{{ fin.fee_counts.paid }}</strong>Pagas</div>
+          <div class="fn-fee-stat fn-fee-stat--pending"><strong>{{ fin.fee_counts.pending }}</strong>Pendentes</div>
+          <div class="fn-fee-stat fn-fee-stat--overdue"><strong>{{ fin.fee_counts.overdue }}</strong>Vencidas</div>
+          <div class="fn-fee-stat"><strong>{{ fin.fee_counts.total }}</strong>Total</div>
+        </div>
+        <div class="fn-list">
+          {% for f in fin.fees_all %}
+          <div class="fn-fee-row">
+            <div class="fn-avatar">
+              {% if f.member_photo %}<img src="{{ url_for('uploaded_file', rel_path=f.member_photo) }}" alt="" />{% else %}{{ f.member_name[0]|upper }}{% endif %}
+            </div>
+            <div style="flex:1;min-width:0">
+              <p class="fn-fee-row__name">{{ f.member_name }}</p>
+              <p class="fn-fee-row__sub">{{ f.title }}{% if f.installment %} · {{ f.installment }}{% endif %} · vence {{ f.due_label }}</p>
+            </div>
+            <div class="fn-fee-row__side">
+              <span class="fn-badge {{ f.status_css }}">{{ f.status_label }}</span>
+              <p class="fn-fee-row__amt">{{ format_brl(f.amount_cents) }}</p>
+              {% include "admin/partials/finance_fee_actions.html" %}
+            </div>
+          </div>
+          {% else %}
+          <p class="fn-empty">Nenhuma cobrança registrada.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="fn-col">
+      <div class="fn-card">
+        <div class="fn-card__head">
+          <h2 class="fn-card__title">Lançamentos de caixa</h2>
+            {% if can_write_finance %}
+            <p class="fn-card__hint" style="margin:0.35rem 0 0">Entradas e saídas — use <strong>Excluir</strong> se lançou por engano</p>
+            {% endif %}
+        </div>
+        <div class="fn-list fn-list--movements">
+          {% for m in fin.movements %}
+          <div class="fn-move fn-move--actions">
+            <span class="fn-move__icon fn-move__icon--{% if m.is_income %}in{% else %}out{% endif %}">{% if m.is_income %}↓{% else %}↑{% endif %}</span>
+            <div class="fn-move__body">
+              <p class="fn-move__title">{{ m.description }}</p>
+              <p class="fn-move__sub">{{ m.category_label }} · {{ m.date_label }} · {{ m.time_ago }}</p>
+            </div>
+            <div class="fn-move__tail">
+              <span class="fn-move__amt fn-move__amt--{% if m.is_income %}in{% else %}out{% endif %}">{% if m.is_income %}+{% else %}−{% endif %}{{ m.amount_label.replace('R$ ','') }}</span>
+              {% include "admin/partials/finance_ledger_actions.html" %}
+            </div>
+          </div>
+          {% else %}
+          <p class="fn-empty">Sem movimentações recentes.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="fn-card" style="margin-top:1rem">
+        <div class="fn-card__head">
+          <h2 class="fn-card__title">Cobranças recentes</h2>
+        </div>
+        <div class="fn-list">
+          {% for f in fin.fees_open[:6] %}
+          <div class="fn-fee-row">
+            <div style="flex:1;min-width:0">
+              <p style="margin:0;font-size:0.8rem;font-weight:700">{{ f.title }}</p>
+              <p style="margin:0;font-size:0.72rem;color:#64748b">{{ f.member_name }} · vence {{ f.due_label }}</p>
+            </div>
+            <div class="fn-fee-row__side fn-fee-row__side--compact">
+              <span class="fn-badge {{ f.status_css }}">{{ f.status_label }}</span>
+              {% include "admin/partials/finance_fee_actions.html" %}
+            </div>
+          </div>
+          {% else %}
+          <p class="fn-empty">Nenhuma cobrança em aberto. 🎉</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <aside class="fn-col">
+      {% if can_write_finance %}
+      <div class="fn-card">
+        <h2 class="fn-card__title">Ações rápidas</h2>
+        <div class="fn-quick-grid" style="margin-top:0.75rem">
+          <button type="button" class="fn-quick-btn" id="fn-quick-fee">💳 Nova cobrança</button>
+          <button type="button" class="fn-quick-btn" id="fn-quick-expense">📤 Nova despesa</button>
+          <button type="button" class="fn-quick-btn" id="fn-quick-bulk">👥 Gerar mensalidades</button>
+          <button type="button" class="fn-quick-btn" onclick="document.getElementById('fn-pix-section')?.scrollIntoView({behavior:'smooth'})">📱 PIX</button>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="fn-card fn-pix-card" id="fn-pix-section" style="margin-top:1rem">
+        <h2 class="fn-card__title">Recebimento via PIX</h2>
+        {% if fin.pix.pix_key %}
+        <p class="text-xs text-slate-500 mt-1">Chave visível para os responsáveis no portal família.</p>
+        <p class="fn-pix-key" id="fn-pix-key-text">{{ fin.pix.pix_key }}</p>
+        <button type="button" class="fn-btn fn-btn--navy" style="width:100%;font-size:0.75rem" id="fn-copy-pix">Copiar chave PIX</button>
+        {% if fin.pix.pix_payload %}
+        <button type="button" class="fn-btn fn-btn--navy" style="width:100%;font-size:0.75rem;margin-top:0.35rem" id="fn-copy-payload">Copiar código PIX</button>
+        <script id="fn-pix-payload" type="application/json">{{ fin.pix.pix_payload | tojson }}</script>
+        {% endif %}
+        {% if fin.pix.pix_qr_uri %}
+        <div class="fn-pix-qr"><img src="{{ fin.pix.pix_qr_uri }}" alt="QR Code PIX" width="140" height="140" /></div>
+        {% endif %}
+        {% if can_write_finance %}
+        <form method="post" action="{{ url_for('admin.finance_pix_key_save') }}" class="mt-3">
+          {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+          <div class="fn-field" style="margin-bottom:0.5rem">
+            <label style="color:#64748b">Alterar chave</label>
+            <input name="pix_key" type="text" value="{{ fin.pix.pix_key }}" maxlength="500" style="background:#fff;color:#0d1b3e;border-color:#e2e8f0" />
+          </div>
+          <button type="submit" class="fn-btn fn-btn--gold" style="width:100%">Salvar chave PIX</button>
+        </form>
+        {% endif %}
+        {% else %}
+        <p class="text-sm text-slate-500 mt-2">Cadastre a chave PIX do clube para os pais pagarem online.</p>
+        {% if can_write_finance %}
+        <form method="post" action="{{ url_for('admin.finance_pix_key_save') }}" class="mt-3">
+          {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+          <input name="pix_key" type="text" placeholder="E-mail, CPF, telefone ou chave aleatória" class="w-full rounded-lg border px-3 py-2 text-sm mb-2" />
+          <button type="submit" class="fn-btn fn-btn--gold" style="width:100%">Cadastrar PIX</button>
+        </form>
+        {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="fn-card" style="margin-top:1rem">
+        <h2 class="fn-card__title">Próximos vencimentos</h2>
+        <div class="fn-list" style="max-height:200px;margin-top:0.65rem">
+          {% for u in fin.upcoming %}
+          <div class="fn-move">
+            <span class="fn-move__icon" style="background:#e0e7ff;color:#3730a3;font-size:0.7rem;font-weight:800">{{ u.due_date|fmt_date('%d') }}<br>{{ u.due_date|fmt_date('%b')|upper }}</span>
+            <div class="fn-move__body">
+              <p class="fn-move__title">{{ u.title }}</p>
+              <p class="fn-move__sub">{{ u.member_name }}</p>
+            </div>
+            <span class="fn-move__amt" style="color:#0d1b3e">{{ format_brl(u.amount_cents) }}</span>
+          </div>
+          {% else %}
+          <p class="fn-empty">Nenhum vencimento próximo.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if fin.pending_proofs and can_write_finance %}
+      <div class="fn-card" style="margin-top:1rem">
+        <h2 class="fn-card__title">Comprovantes para validar</h2>
+        <p class="text-xs text-slate-500" style="margin:0.35rem 0 0.65rem">Validar o comprovante não credita o caixa — use o botão <strong>Paga</strong> na cobrança após confirmar o recebimento.</p>
+        {% for p in fin.pending_proofs %}
+        <div class="fn-proof">
+          <p style="margin:0;font-size:0.78rem;font-weight:700">{{ p.member_name }} — {{ p.fee_title }}</p>
+          <p style="margin:0.2rem 0 0;font-size:0.72rem;color:#64748b">{{ p.amount_label }} · {{ p.created_label }}</p>
+          {% if p.note %}<p style="margin:0.35rem 0 0;font-size:0.72rem">{{ p.note }}</p>{% endif %}
+          <div class="fn-proof__actions">
+            <form method="post" action="{{ url_for('admin.finance_proof_approve', proof_id=p.id) }}">
+              {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+              <button type="submit" class="fn-mini-btn fn-mini-btn--ok">Validar comprovante</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.finance_proof_reject', proof_id=p.id) }}">
+              {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+              <button type="submit" class="fn-mini-btn fn-mini-btn--no">Rejeitar</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.finance_proof_revision', proof_id=p.id) }}">
+              {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+              <button type="submit" class="fn-mini-btn fn-mini-btn--rev">Revisão</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+
+{% if can_write_finance %}
+{% include "admin/partials/finance_drawers.html" %}
+{% endif %}
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/finance-premium.js') }}" defer></script>
+{% endblock %}

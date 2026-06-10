@@ -1,0 +1,89 @@
+{# Accordion «Desbravadores» — Membros, Unidades, Presença, Especialidades, Atividades #}
+{% set _child = ap_nav_desbravadores_child_active|default({}) %}
+<div
+  class="ap-nav-group{% if ap_nav_desbravadores_open %} is-open{% endif %}"
+  data-ap-nav-group="{{ desbravadores_group_id|default('desbravadores') }}"
+>
+  <button
+    type="button"
+    class="ap-nav-group__trigger{% if ap_nav_desbravadores_has_active %} ap-nav-group__trigger--active{% endif %}"
+    data-ap-nav-group-trigger
+    aria-expanded="{{ 'true' if ap_nav_desbravadores_open else 'false' }}"
+    aria-controls="ap-nav-panel-desbravadores"
+    id="ap-nav-trigger-desbravadores"
+    title="Desbravadores"
+  >
+    <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+    <span class="ap-nav-group__label">Desbravadores</span>
+    <svg class="ap-nav-group__chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+    </svg>
+  </button>
+  <div
+    id="ap-nav-panel-desbravadores"
+    class="ap-nav-group__panel"
+    role="region"
+    aria-labelledby="ap-nav-trigger-desbravadores"
+    {% if not ap_nav_desbravadores_open %}aria-hidden="true"{% endif %}
+  >
+    <div class="ap-nav-group__items">
+      <a
+        href="{{ nav.members|default('/admin/membros') }}"
+        class="ap-nav-link ap-nav-link--sub {% if _child.get('members') %}ap-nav-link--active{% endif %}"
+        data-ap-close-sidebar
+        title="Membros"
+      >
+        <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+        Membros
+      </a>
+      <a
+        href="{{ nav.units|default('/admin/unidades') }}"
+        class="ap-nav-link ap-nav-link--sub {% if _child.get('units') %}ap-nav-link--active{% endif %}"
+        data-ap-close-sidebar
+        title="Unidades"
+      >
+        <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        Unidades
+      </a>
+      <a
+        href="{{ nav.attendance|default('/admin/presencas') }}"
+        class="ap-nav-link ap-nav-link--sub {% if _child.get('attendance') %}ap-nav-link--active{% endif %}"
+        data-ap-close-sidebar
+        title="Presença"
+      >
+        <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Presença
+      </a>
+      <a
+        href="{{ nav.specialties|default('/admin/especialidades') }}"
+        class="ap-nav-link ap-nav-link--sub {% if _child.get('specialties') %}ap-nav-link--active{% endif %}"
+        data-ap-close-sidebar
+        title="Especialidades"
+      >
+        <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+        </svg>
+        Especialidades
+      </a>
+      <a
+        href="{{ nav.activities|default('/admin/atividades') }}"
+        class="ap-nav-link ap-nav-link--sub {% if _child.get('activities') %}ap-nav-link--active{% endif %}"
+        data-ap-close-sidebar
+        title="Atividades"
+      >
+        <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Atividades
+      </a>
+    </div>
+  </div>
+</div>

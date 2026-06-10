@@ -1,0 +1,187 @@
+<div id="wh-drawer-root" class="wh-drawer-root" aria-hidden="true">
+  <div class="wh-drawer-backdrop" id="wh-drawer-backdrop" tabindex="-1" data-wh-drawer-close></div>
+
+  <aside id="wh-drawer-item" class="wh-drawer" role="dialog" aria-labelledby="wh-drawer-item-title" aria-modal="true" hidden>
+    <header class="wh-drawer__head">
+      <div>
+        <h2 id="wh-drawer-item-title" class="wh-drawer__title">Novo item</h2>
+        <p style="margin:0.25rem 0 0;font-size:0.8rem;color:rgb(255 255 255 / 0.55)">Cadastro completo no almoxarifado</p>
+      </div>
+      <button type="button" class="wh-drawer__close" data-wh-drawer-close aria-label="Fechar">×</button>
+    </header>
+    <form id="wh-form-item" method="post" action="{{ url_for('admin.warehouse_item_create') }}" enctype="multipart/form-data" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+      <div class="wh-drawer__scroll">
+        <div class="wh-field">
+          <label for="wh-i-name">Nome do item *</label>
+          <input name="name" id="wh-i-name" required maxlength="160" placeholder="Ex.: Camisa oficial P" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-cat">Categoria</label>
+          <select name="category_id" id="wh-i-cat">
+            <option value="0">— Selecione —</option>
+            {% for c in wh.categories %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-code">Código interno</label>
+          <input name="internal_code" id="wh-i-code" maxlength="40" placeholder="Ex.: UNI-001" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-unit">Unidade</label>
+          <select name="unit" id="wh-i-unit">
+            {% for u in wh.unit_options %}
+            <option value="{{ u }}">{{ wh.unit_labels.get(u, u) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-qty">Quantidade inicial</label>
+          <input type="number" name="initial_quantity" id="wh-i-qty" min="0" value="0" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-min">Estoque mínimo</label>
+          <input type="number" name="min_stock" id="wh-i-min" min="0" value="0" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-loc">Localização</label>
+          <input name="location" id="wh-i-loc" maxlength="120" placeholder="Ex.: Prateleira A2" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-price">Valor unitário estimado (R$)</label>
+          <input name="unit_price" id="wh-i-price" placeholder="0,00" />
+        </div>
+        <div class="wh-field">
+          <label>Foto do item</label>
+          <label class="wh-upload" id="wh-upload-zone">
+            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" id="wh-i-photo" />
+            <span id="wh-upload-label">Arraste uma imagem ou clique para enviar</span>
+          </label>
+        </div>
+        <div class="wh-field">
+          <label for="wh-i-notes">Observações</label>
+          <textarea name="notes" id="wh-i-notes" rows="3" placeholder="Detalhes, fornecedor, tamanhos…"></textarea>
+        </div>
+      </div>
+      <footer class="wh-drawer__foot">
+        <button type="button" class="wh-btn wh-btn--ghost" data-wh-drawer-close>Cancelar</button>
+        <button type="submit" class="wh-btn wh-btn--gold">Salvar item</button>
+      </footer>
+    </form>
+  </aside>
+
+  <aside id="wh-drawer-edit" class="wh-drawer" role="dialog" aria-labelledby="wh-drawer-edit-title" aria-modal="true" hidden>
+    <header class="wh-drawer__head">
+      <div>
+        <h2 id="wh-drawer-edit-title" class="wh-drawer__title">Editar item</h2>
+      </div>
+      <button type="button" class="wh-drawer__close" data-wh-drawer-close aria-label="Fechar">×</button>
+    </header>
+    <form id="wh-form-edit" method="post" action="" enctype="multipart/form-data" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+      <div class="wh-drawer__scroll">
+        <div class="wh-field">
+          <label for="wh-e-name">Nome *</label>
+          <input name="name" id="wh-e-name" required maxlength="160" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-e-cat">Categoria</label>
+          <select name="category_id" id="wh-e-cat">
+            <option value="0">—</option>
+            {% for c in wh.categories %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="wh-field">
+          <label for="wh-e-code">Código</label>
+          <input name="internal_code" id="wh-e-code" maxlength="40" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-e-unit">Unidade</label>
+          <select name="unit" id="wh-e-unit">
+            {% for u in wh.unit_options %}
+            <option value="{{ u }}">{{ wh.unit_labels.get(u, u) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="wh-field">
+          <label for="wh-e-min">Estoque mínimo</label>
+          <input type="number" name="min_stock" id="wh-e-min" min="0" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-e-loc">Localização</label>
+          <input name="location" id="wh-e-loc" maxlength="120" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-e-price">Valor unitário (R$)</label>
+          <input name="unit_price" id="wh-e-price" />
+        </div>
+        <div class="wh-field">
+          <label>Nova foto (opcional)</label>
+          <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-e-notes">Observações</label>
+          <textarea name="notes" id="wh-e-notes" rows="3"></textarea>
+        </div>
+      </div>
+      <footer class="wh-drawer__foot">
+        <button type="button" class="wh-btn wh-btn--ghost" data-wh-drawer-close>Cancelar</button>
+        <button type="submit" class="wh-btn wh-btn--gold">Salvar alterações</button>
+      </footer>
+    </form>
+  </aside>
+
+  <aside id="wh-drawer-move" class="wh-drawer" role="dialog" aria-labelledby="wh-drawer-move-title" aria-modal="true" hidden>
+    <header class="wh-drawer__head">
+      <div>
+        <h2 id="wh-drawer-move-title" class="wh-drawer__title">Movimentação</h2>
+        <p id="wh-move-sub" style="margin:0.25rem 0 0;font-size:0.8rem;color:rgb(255 255 255 / 0.55)"></p>
+      </div>
+      <button type="button" class="wh-drawer__close" data-wh-drawer-close aria-label="Fechar">×</button>
+    </header>
+    <form id="wh-form-move" method="post" action="" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+      <input type="hidden" name="direction" id="wh-move-direction" value="in" />
+      <div class="wh-drawer__scroll">
+        <div class="wh-field">
+          <label for="wh-m-qty">Quantidade *</label>
+          <input type="number" name="quantity" id="wh-m-qty" min="1" required value="1" />
+        </div>
+        <div class="wh-field">
+          <label for="wh-m-notes">Observações</label>
+          <textarea name="notes" id="wh-m-notes" rows="3" placeholder="Motivo, evento, responsável…"></textarea>
+        </div>
+      </div>
+      <footer class="wh-drawer__foot">
+        <button type="button" class="wh-btn wh-btn--ghost" data-wh-drawer-close>Cancelar</button>
+        <button type="submit" class="wh-btn wh-btn--gold" id="wh-move-submit">Confirmar</button>
+      </footer>
+    </form>
+  </aside>
+
+  <aside id="wh-drawer-hist" class="wh-drawer" role="dialog" aria-labelledby="wh-drawer-hist-title" aria-modal="true" hidden>
+    <header class="wh-drawer__head">
+      <div>
+        <h2 id="wh-drawer-hist-title" class="wh-drawer__title">Histórico do item</h2>
+        <p id="wh-hist-sub" style="margin:0.25rem 0 0;font-size:0.8rem;color:rgb(255 255 255 / 0.55)"></p>
+      </div>
+      <button type="button" class="wh-drawer__close" data-wh-drawer-close aria-label="Fechar">×</button>
+    </header>
+    <div class="wh-drawer__scroll">
+      <div class="wh-table-wrap">
+        <table class="wh-table" id="wh-hist-item-table">
+          <thead><tr><th>Data</th><th>Tipo</th><th>Qtd</th><th>Saldo</th><th>Obs.</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="wh-empty is-hidden" id="wh-hist-empty">Sem movimentações para este item.</p>
+    </div>
+    <footer class="wh-drawer__foot">
+      <button type="button" class="wh-btn wh-btn--ghost" data-wh-drawer-close>Fechar</button>
+    </footer>
+  </aside>
+</div>

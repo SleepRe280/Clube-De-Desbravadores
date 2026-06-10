@@ -1,0 +1,232 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Progresso{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/parent-progress-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% if portal_child and progress_page %}
+{% set hero = progress_page.hero %}
+{% set xp_src = progress_page.xp_sources %}
+{% set journey = progress_page.journey %}
+{% set cn = portal_child.full_name.split()[0] %}
+
+<div id="pg-app" class="pg-page">
+  <header class="pg-head pp-animate-in">
+    <div class="pg-head__icon" aria-hidden="true">⭐</div>
+    <div>
+      <h1>Progresso</h1>
+      <p>Acompanhe a evolução de {{ cn }} de forma simples e divertida.</p>
+    </div>
+  </header>
+
+  {# Card principal — nível e XP #}
+  <section class="pg-hero pp-card pp-animate-in pp-animate-in--1" aria-label="Nível e experiência">
+    <div class="pg-hero__main">
+      <div class="pg-hero__profile">
+        <div class="pg-hero__avatar-wrap">
+          {% if portal_child.photo_filename %}
+          <img src="{{ url_for('uploaded_file', rel_path=portal_child.photo_filename) }}" class="pg-hero__avatar" alt="" />
+          {% else %}
+          <div class="pg-hero__avatar pg-hero__avatar--fallback">{{ cn[0]|upper }}</div>
+          {% endif %}
+        </div>
+        <div class="pg-hero__identity">
+          <h2>{{ portal_child.full_name }}</h2>
+          <p class="pg-hero__role">{{ hero.class_label }} · Desbravador</p>
+          {% if active_club %}
+          <span class="pg-hero__club">{{ active_club.nome }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pg-hero__level-block">
+        <div class="pg-level-shield" data-pg-level="{{ hero.level }}">
+          <span class="pg-level-shield__num" data-pp-count="{{ hero.level }}">{{ hero.level }}</span>
+          <span class="pg-level-shield__label">Nível</span>
+        </div>
+        <p class="pg-hero__level-title">{{ hero.level_title }}</p>
+      </div>
+    </div>
+
+    <div class="pg-hero__xp">
+      <div class="pg-hero__xp-meta">
+        <span class="pg-hero__xp-label">XP atual</span>
+        <span class="pg-hero__xp-values">
+          <strong data-pp-count="{{ hero.xp }}">{{ hero.xp }}</strong>
+          <span>/ {{ hero.xp_level_max|default(hero.xp + hero.xp_to_next) }} XP</span>
+        </span>
+      </div>
+      <div class="pg-xp-bar" data-pg-progress="{{ hero.progress_pct }}" aria-hidden="true">
+        <span></span>
+      </div>
+      {% if hero.is_max_level %}
+      <p class="pg-hero__xp-hint pg-hero__xp-hint--max">Nível máximo alcançado! Grande Mestre.</p>
+      {% else %}
+      <p class="pg-hero__xp-hint">Faltam <strong data-pp-count="{{ hero.xp_to_next }}">{{ hero.xp_to_next }}</strong> XP para o nível {{ hero.next_level }}.</p>
+      {% endif %}
+    </div>
+
+    <aside class="pg-hero__max-hint" aria-label="Como alcançar o nível máximo">
+      <span class="pg-hero__max-icon" aria-hidden="true">🏆</span>
+      <div>
+        <p class="pg-hero__max-title">Nível 100</p>
+        <p class="pg-hero__max-text">Conclua todas as classes regulares e cerca de {{ progress_page.max_level_hint.specialty_target }} especialidades.</p>
+      </div>
+    </aside>
+  </section>
+
+  {# Fontes de XP #}
+  <section class="pg-section pp-animate-in pp-animate-in--2">
+    <h3 class="pg-section__title">Suas fontes de XP</h3>
+    <div class="pg-xp-sources">
+      <article class="pg-card pg-card--classes">
+        <header class="pg-card__head">
+          <span class="pg-card__badge pg-card__badge--primary">Principal</span>
+          <h4>Classes regulares</h4>
+          <p>Atividades do caderno — até {{ xp_src.class_xp_max }} XP</p>
+        </header>
+        <div class="pg-classes-grid">
+          {% for c in xp_src.classes %}
+          <div class="pg-class-shield pg-class-shield--{{ c.status }}" style="--pg-class-color: {{ c.color }}">
+            <div class="pg-class-shield__icon" aria-hidden="true">{{ c.icon }}</div>
+            <p class="pg-class-shield__name">{{ c.name }}</p>
+            <div class="pg-class-shield__bar" data-pg-progress="{{ c.percent }}" aria-hidden="true"><span></span></div>
+            <p class="pg-class-shield__pct">{{ c.percent }}%</p>
+            <p class="pg-class-shield__xp">{{ c.xp_earned }} XP</p>
+          </div>
+          {% endfor %}
+        </div>
+        <footer class="pg-card__footer {% if xp_src.all_classes_done %}pg-card__footer--done{% endif %}">
+          {% if xp_src.all_classes_done %}
+          Todas as classes concluídas! {{ xp_src.class_xp_total }} XP.
+          {% else %}
+          {{ xp_src.class_xp_total }} / {{ xp_src.class_xp_max }} XP com classes regulares
+          {% endif %}
+        </footer>
+      </article>
+
+      <article class="pg-card pg-card--specialties">
+        <header class="pg-card__head">
+          <span class="pg-card__badge pg-card__badge--accent">Complementar</span>
+          <h4>Especialidades</h4>
+          <p>Medalhas colecionadas — até {{ xp_src.specialty_xp_max }} XP</p>
+        </header>
+        <div class="pg-spec-ring-wrap">
+          <div class="pg-spec-ring" role="img" aria-label="{{ xp_src.specialties_label }} especialidades concluídas">
+            <svg class="pg-spec-ring__svg" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="pg-spec-ring__track" cx="50" cy="50" r="42" />
+              <circle class="pg-spec-ring__fill" cx="50" cy="50" r="42" data-percent="{{ xp_src.specialties_percent }}" />
+            </svg>
+            <span class="pg-spec-ring__center">
+              <strong data-pp-count="{{ xp_src.specialties_percent }}">{{ xp_src.specialties_percent }}</strong>%
+            </span>
+          </div>
+          <div class="pg-spec-stats">
+            <p class="pg-spec-stats__count">
+              <strong data-pp-count="{{ xp_src.specialties_completed }}">{{ xp_src.specialties_completed }}</strong>
+              / {{ xp_src.specialties_total }} especialidades
+            </p>
+            <p class="pg-spec-stats__hint">{{ xp_src.specialties_percent }}% concluídas</p>
+            <p class="pg-spec-stats__target">~{{ progress_page.max_level_hint.specialty_target }} necessárias para o nível máximo</p>
+          </div>
+        </div>
+        <footer class="pg-card__footer pg-card__footer--accent">
+          XP obtido com especialidades: {{ xp_src.specialty_xp }} XP
+        </footer>
+      </article>
+    </div>
+  </section>
+
+  {# Próximo objetivo #}
+  <section class="pg-objective pp-card pp-animate-in pp-animate-in--3" aria-label="Próximo objetivo">
+    <div class="pg-objective__icon" aria-hidden="true">🎯</div>
+    <div class="pg-objective__body">
+      <p class="pg-objective__label">Próximo objetivo</p>
+      <h3>{{ progress_page.next_objective.headline }}</h3>
+      <p class="pg-objective__detail">{{ progress_page.next_objective.detail }}</p>
+      <p class="pg-objective__reward"><span>Recompensa:</span> {{ progress_page.next_objective.reward }}</p>
+    </div>
+  </section>
+
+  {# Jornada #}
+  <section class="pg-section pp-animate-in pp-animate-in--4">
+    <h3 class="pg-section__title">Sua jornada</h3>
+    <div class="pg-journey pp-card">
+      <div class="pg-journey__path" role="list" aria-label="Marcos de evolução">
+        {% for m in journey.milestones %}
+        <div class="pg-journey__node pg-journey__node--{{ m.state }}" role="listitem">
+          <div class="pg-journey__shield">
+            {% if m.state == 'done' %}✓{% elif m.state == 'current' %}{{ journey.current_level }}{% else %}{{ m.level }}{% endif %}
+          </div>
+          {% if m.state == 'current' %}
+          <span class="pg-journey__level pg-journey__level--now">{{ journey.current_level }} atual</span>
+          <span class="pg-journey__label">Próximo: {{ m.label }}</span>
+          {% else %}
+          <span class="pg-journey__level">Nível {{ m.level }}</span>
+          <span class="pg-journey__label">{{ m.label }}</span>
+          {% endif %}
+        </div>
+        {% if not loop.last %}
+        <div class="pg-journey__connector pg-journey__connector--{{ m.state }}" aria-hidden="true"></div>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="pg-journey__info">
+        {% if journey.next_milestone %}
+        <div class="pg-journey__callout pg-journey__callout--next">
+          <span aria-hidden="true">⚡</span>
+          <div>
+            <p class="pg-journey__callout-label">Próximo marco</p>
+            <p class="pg-journey__callout-text">Nível {{ journey.next_milestone.level }} — {{ journey.next_milestone.label }}</p>
+          </div>
+        </div>
+        {% endif %}
+        <div class="pg-journey__callout">
+          <span aria-hidden="true">🧭</span>
+          <div>
+            <p class="pg-journey__callout-label">Como evoluir</p>
+            <p class="pg-journey__callout-text">Classes regulares levam ao nível 80. Especialidades completam a jornada até o nível 100.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# Conquistas recentes #}
+  <section class="pg-section pp-animate-in pp-animate-in--5">
+    <div class="pg-section__head-row">
+      <h3 class="pg-section__title">Conquistas recentes</h3>
+    </div>
+    <div class="pg-achievements">
+      {% for a in progress_page.achievements %}
+      <article class="pg-achievement" data-pg-achievement>
+        <div class="pg-achievement__medal pg-achievement__medal--{{ a.icon }}">
+          {% if a.icon == 'medal' %}🎖️{% elif a.icon == 'shield' %}🛡️{% elif a.icon == 'trophy' %}🏆{% elif a.icon == 'book' %}📘{% else %}⭐{% endif %}
+        </div>
+        <p class="pg-achievement__title">{{ a.title }}</p>
+        <p class="pg-achievement__date">
+          {% if a.date %}{{ a.date.strftime('%d/%m/%Y') }}{% else %}Conquistado{% endif %}
+        </p>
+      </article>
+      {% else %}
+      <p class="pg-achievements__empty">Conquistas aparecerão aqui conforme {{ cn }} evoluir no clube.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% else %}
+<section class="pp-card p-12 text-center pp-animate-in">
+  <p class="text-6xl mb-4">🌲</p>
+  <h2 class="text-xl font-bold text-navy-900">Nenhum desbravador vinculado</h2>
+  <p class="text-slate-600 mt-2 max-w-md mx-auto">Vincule um desbravador para ver o progresso gamificado.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/parent-progress-premium.js') }}" defer></script>
+{% endblock %}

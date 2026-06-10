@@ -1,0 +1,217 @@
+{# Ficha premium compartilhada — member, profile_* #}
+<div class="mp-page">
+  <section class="mp-hero">
+    <div class="mp-hero__bg" aria-hidden="true"></div>
+    <div class="mp-hero__inner">
+      <div>
+        {% if member.photo_filename %}
+        <img src="{{ url_for('uploaded_file', rel_path=member.photo_filename) }}" alt="" class="mp-hero__photo" />
+        {% else %}
+        <div class="mp-hero__photo-placeholder">{{ member.full_name[0]|upper }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <h1 class="mp-hero__name">{{ member.full_name }}</h1>
+        <div class="mp-hero__meta">
+          <span>🛡 {{ profile_unit }}</span>
+          <span>📘 {{ profile_class_label }}</span>
+          {% if member.age_years is not none %}<span>🎂 {{ member.age_years }} anos</span>{% endif %}
+          <span>📊 {{ profile_attendance_rate }}% frequência</span>
+        </div>
+        <div class="mp-badges">
+          {% for b in profile_badges %}
+          <span class="mp-badge mp-badge--{{ b.variant }}">{{ b.label }}</span>
+          {% endfor %}
+        </div>
+        <div class="mp-progress-block">
+          <div class="mp-progress-label">
+            <span>Progresso da classe</span>
+            <span class="font-bold text-gold-400">{{ profile_performance }}%</span>
+          </div>
+          <div class="mp-progress-bar"><span style="width: {{ profile_performance }}%"></span></div>
+          <p class="text-xs text-slate-400 mt-2">Meta: {{ profile_meta_goal }}</p>
+        </div>
+      </div>
+      <div class="mp-level-card">
+        <div class="mp-level-card__shield">🏅</div>
+        <p class="mp-level-card__title">Título</p>
+        <p class="mp-level-card__level">{{ profile_level_title }}</p>
+        <p class="text-[10px] text-slate-400 mt-1">{{ profile_duques_total }} duques</p>
+      </div>
+    </div>
+  </section>
+
+  <nav class="mp-tabs" data-mp-tabs role="tablist" aria-label="Seções da ficha">
+    <button type="button" class="mp-tab mp-tab--active" data-mp-tab="visao" aria-selected="true">📊 Visão Geral</button>
+    <button type="button" class="mp-tab" data-mp-tab="informacoes">👤 Informações</button>
+    <button type="button" class="mp-tab" data-mp-tab="progresso">📈 Progresso</button>
+    <button type="button" class="mp-tab" data-mp-tab="especialidades">🎖 Especialidades</button>
+    <button type="button" class="mp-tab" data-mp-tab="eventos">📅 Eventos</button>
+    <button type="button" class="mp-tab" data-mp-tab="timeline">🕐 Timeline</button>
+  </nav>
+
+  <div data-mp-panel="visao" class="mp-panel mp-panel--active">
+    <div class="mp-stat-row mb-6">
+      <div class="mp-stat"><strong>{{ profile_performance }}%</strong><span>Desempenho</span></div>
+      <div class="mp-stat"><strong>{{ profile_attendance_rate }}%</strong><span>Presença</span></div>
+      <div class="mp-stat"><strong>{{ profile_duques_total }}</strong><span>Duques</span></div>
+      {% if profile_specialties_summary is defined and profile_specialties_summary %}
+      <div class="mp-stat"><strong>{{ profile_specialties_summary.completed_count }}</strong><span>Especialidades</span></div>
+      {% endif %}
+    </div>
+    <div class="mp-grid mp-grid--2">
+      <article class="mp-card">
+        <h3 class="mp-card__title">🌲 No clube</h3>
+        <dl>
+          <div class="mp-field"><dt>Unidade</dt><dd>{{ profile_unit }}</dd></div>
+          <div class="mp-field"><dt>Classe</dt><dd>{{ profile_class_label }}</dd></div>
+          <div class="mp-field"><dt>Entrada no clube</dt><dd>{% if profile_entry_date %}{{ profile_entry_date.strftime('%d/%m/%Y') }}{% else %}—{% endif %}</dd></div>
+          <div class="mp-field"><dt>Cargo</dt><dd>Desbravador</dd></div>
+        </dl>
+      </article>
+      {% if profile_emergency.name != '—' %}
+      <article class="mp-card mp-emergency">
+        <h3 class="mp-card__title">🚨 Emergência</h3>
+        <p class="font-bold text-slate-900">{{ profile_emergency.name }}</p>
+        <p class="text-sm text-slate-600 mt-1">{{ profile_emergency.phone }}</p>
+        {% if profile_emergency.whatsapp %}
+        <a href="{{ profile_emergency.whatsapp }}" target="_blank" rel="noopener" class="mp-action-btn mp-action-btn--wa mt-3 inline-flex">WhatsApp</a>
+        {% endif %}
+      </article>
+      {% endif %}
+    </div>
+  </div>
+
+  <div data-mp-panel="informacoes" class="mp-panel">
+    <div class="mp-grid mp-grid--2">
+      <article class="mp-card">
+        <h3 class="mp-card__title">📋 Informações gerais</h3>
+        <dl>
+          <div class="mp-field"><dt>Nome</dt><dd>{{ member.full_name }}</dd></div>
+          <div class="mp-field"><dt>Nascimento</dt><dd>{% if member.birth_date %}{{ member.birth_date.strftime('%d/%m/%Y') }}{% else %}—{% endif %}</dd></div>
+          <div class="mp-field"><dt>Idade</dt><dd>{% if member.age_years is not none %}{{ member.age_years }} anos{% else %}—{% endif %}</dd></div>
+          {% if profile_mode == 'admin' or profile_readonly %}
+          <div class="mp-field"><dt>CPF</dt><dd>{{ profile_cpf_display }}</dd></div>
+          {% endif %}
+          <div class="mp-field"><dt>Tipo sanguíneo</dt><dd>{{ member.blood_type or '—' }}</dd></div>
+        </dl>
+      </article>
+      <article class="mp-card">
+        <h3 class="mp-card__title">👪 Responsáveis</h3>
+        {% for g in profile_guardians %}
+        <div class="mp-guardian">
+          <div class="mp-guardian__avatar">{{ g.avatar_letter }}</div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[10px] font-bold uppercase text-slate-500">{{ g.role }}</p>
+            <p class="font-bold text-slate-900">{{ g.name }}</p>
+            {% if g.email %}<p class="text-xs text-slate-600 mt-0.5">{{ g.email }}</p>{% endif %}
+            <div class="mp-guardian__actions">
+              {% if g.email %}
+              <a href="mailto:{{ g.email }}" class="mp-action-btn">E-mail</a>
+              <button type="button" class="mp-action-btn" data-mp-copy="{{ g.email }}">Copiar</button>
+              {% endif %}
+              {% if g.whatsapp %}<a href="{{ g.whatsapp }}" class="mp-action-btn mp-action-btn--wa" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-sm text-slate-500">Nenhum responsável cadastrado na ficha.</p>
+        {% endfor %}
+      </article>
+      <article class="mp-card mp-emergency">
+        <h3 class="mp-card__title">🚨 Contato de emergência</h3>
+        <dl>
+          <div class="mp-field"><dt>Nome</dt><dd>{{ profile_emergency.name }}</dd></div>
+          <div class="mp-field"><dt>Telefone</dt><dd>{{ profile_emergency.phone }}</dd></div>
+          <div class="mp-field"><dt>Parentesco</dt><dd>{{ profile_emergency.relation }}</dd></div>
+        </dl>
+      </article>
+      <article class="mp-card">
+        <h3 class="mp-card__title">📍 Endereço</h3>
+        <p class="text-sm text-slate-500">Endereço completo cadastrado pela diretoria quando disponível.</p>
+        <div class="mp-map-placeholder">Mapa — em breve</div>
+      </article>
+      {% if profile_mode == 'admin' and profile_director_note %}
+      <article class="mp-card md:col-span-2">
+        <h3 class="mp-card__title">📝 Observações da diretoria</h3>
+        <p class="text-sm text-slate-700 leading-relaxed">{{ profile_director_note }}</p>
+      </article>
+      {% endif %}
+    </div>
+  </div>
+
+  <div data-mp-panel="progresso" class="mp-panel">
+    <article class="mp-card">
+      <h3 class="mp-card__title">📈 Progresso</h3>
+      <div class="space-y-4">
+        <div>
+          <p class="text-sm text-slate-600 mb-1">Desempenho geral — {{ profile_performance }}%</p>
+          <div class="mp-progress-bar"><span style="width: {{ profile_performance }}%"></span></div>
+        </div>
+        <p class="text-xs text-slate-500 mt-4">Presença: {{ profile_attendance_present }}/{{ profile_attendance_total }} reuniões ({{ profile_attendance_rate }}%)</p>
+      </div>
+      {% if profile_mode == 'parent' and portal_nav is defined %}
+      <a href="{{ portal_nav.progress|default('/pais/progresso') }}" class="inline-block mt-4 text-sm font-bold text-gold-600 hover:underline">Abrir progresso detalhado →</a>
+      {% elif profile_mode == 'admin' and admin_nav_kw is defined %}
+      <a href="{{ url_for('admin.attendance_overview', **admin_nav_kw) }}" class="inline-block mt-4 text-sm font-bold text-sky-600 hover:underline">Gerenciar presenças do clube →</a>
+      <a href="{{ url_for('admin.admin_activities', tab='desbravadores', membro=member.id, **admin_nav_kw) }}" class="inline-block mt-2 text-sm font-bold text-violet-600 hover:underline">Ver atividades e classes →</a>
+      {% endif %}
+    </article>
+  </div>
+
+  <div data-mp-panel="especialidades" class="mp-panel">
+    <article class="mp-card">
+      <h3 class="mp-card__title">🎖 Especialidades</h3>
+      <p class="text-sm text-slate-600">Classe atual: <strong>{{ profile_class_label }}</strong></p>
+      {% if profile_specialties_summary is defined %}
+      <div class="mt-3 space-y-2 text-sm">
+        <div class="flex justify-between py-1 border-b border-slate-100"><span>Progresso</span><strong>{{ profile_specialties_summary.progress_label }} ({{ profile_specialties_summary.progress_percent }}%)</strong></div>
+        <div class="flex justify-between py-1 border-b border-slate-100"><span>Concluídas</span><strong>{{ profile_specialties_summary.completed_count }}</strong></div>
+        <div class="flex justify-between py-1 border-b border-slate-100"><span>Em andamento</span><strong>{{ profile_specialties_summary.in_progress_count }}</strong></div>
+        <div class="flex justify-between py-1"><span>Pontos</span><strong>{{ profile_specialties_summary.points_total }}</strong></div>
+      </div>
+      <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div class="h-full bg-gold-400 rounded-full" style="width:{{ profile_specialties_summary.progress_percent }}%"></div>
+      </div>
+      {% else %}
+      <p class="text-sm text-slate-600 mt-1">Acompanhe as especialidades na área dedicada do clube.</p>
+      {% endif %}
+      {% if profile_mode == 'parent' and portal_nav is defined %}
+      <a href="{{ portal_nav.specialties|default('/pais/especialidades') }}" class="inline-block mt-3 text-sm font-bold text-gold-600 hover:underline">Ver especialidades →</a>
+      {% elif profile_mode == 'admin' and admin_nav_kw is defined %}
+      <a href="{{ url_for('admin.admin_specialties', membro=member.id, **admin_nav_kw) }}" class="inline-block mt-3 text-sm font-bold text-gold-600 hover:underline">Gestão de especialidades →</a>
+      {% endif %}
+    </article>
+  </div>
+
+  <div data-mp-panel="eventos" class="mp-panel">
+    <article class="mp-card">
+      <h3 class="mp-card__title">📅 Eventos</h3>
+      <p class="text-sm text-slate-600">Acompanhe a agenda do clube e confirme presença nos eventos.</p>
+      {% if profile_mode == 'parent' and portal_nav is defined %}
+      <a href="{{ portal_nav.agenda|default('/pais/agenda') }}" class="inline-block mt-3 text-sm font-bold text-gold-600 hover:underline">Ver agenda →</a>
+      {% elif profile_mode == 'admin' and admin_nav_kw is defined %}
+      <a href="{{ url_for('admin.agenda_list', **admin_nav_kw) }}" class="inline-block mt-3 text-sm font-bold text-violet-600 hover:underline">Agenda do clube →</a>
+      {% endif %}
+    </article>
+  </div>
+
+  <div data-mp-panel="timeline" class="mp-panel">
+    <article class="mp-card">
+      <h3 class="mp-card__title">🕐 Timeline</h3>
+      {% for ev in profile_timeline %}
+      <div class="mp-timeline-item">
+        <div class="mp-timeline-icon">
+          {% if ev.icon == 'trophy' %}🏆{% elif ev.icon == 'star' %}⭐{% else %}📅{% endif %}
+        </div>
+        <div>
+          <p class="font-semibold text-slate-900 text-sm">{{ ev.title }}</p>
+          <p class="text-xs text-slate-500">{{ ev.subtitle }}{% if ev.date %} · {% if ev.date.strftime is defined %}{{ ev.date.strftime('%d/%m/%Y') }}{% else %}{{ ev.date }}{% endif %}{% endif %}</p>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-sm text-slate-500">Nenhum evento registrado ainda.</p>
+      {% endfor %}
+    </article>
+  </div>
+</div>

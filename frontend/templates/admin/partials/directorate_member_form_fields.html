@@ -1,0 +1,88 @@
+<section class="ld-drawer__section">
+  <h3>Dados pessoais</h3>
+  <div class="ld-form-2col">
+    <div class="span-2">
+      <label>Foto</label>
+      <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" />
+      <label class="ld-toggle mt-2"><input type="checkbox" name="remove_photo" value="1" /> Remover foto atual</label>
+    </div>
+    <div class="span-2"><label>Nome completo *</label><input name="full_name" required /></div>
+    <div><label>Data de nascimento</label><input type="date" name="birth_date" /></div>
+    <div><label>Sexo</label>
+      <select name="sex">
+        <option value="">—</option>
+        <option value="M">Masculino</option>
+        <option value="F">Feminino</option>
+      </select>
+    </div>
+    <div><label>CPF (opcional)</label><input name="cpf" /></div>
+    <div><label>RG (opcional)</label><input name="rg" /></div>
+  </div>
+</section>
+<section class="ld-drawer__section">
+  <h3>Contato</h3>
+  <div class="ld-form-2col">
+    <div><label>Celular</label><input name="phone" type="tel" /></div>
+    <div><label>WhatsApp</label><input name="whatsapp" type="tel" /></div>
+    <div class="span-2"><label>E-mail</label><input name="email" type="email" /></div>
+    <div class="span-2"><label>E-mail público (portal família)</label><input name="email_public" type="email" /></div>
+  </div>
+</section>
+<section class="ld-drawer__section">
+  <h3>Endereço</h3>
+  <div class="ld-form-2col">
+    <div><label>CEP</label><input name="address_cep" /></div>
+    <div><label>Estado</label><input name="address_state" maxlength="2" /></div>
+    <div class="span-2"><label>Rua</label><input name="address_street" /></div>
+    <div><label>Bairro</label><input name="address_neighborhood" /></div>
+    <div><label>Cidade</label><input name="address_city" /></div>
+  </div>
+</section>
+<section class="ld-drawer__section">
+  <h3>Dados do clube</h3>
+  <div class="ld-form-2col">
+    <div><label>Unidade</label>
+      <select name="unit">
+        <option value="">—</option>
+        {% for u in unit_options|default([]) %}
+        <option value="{{ u }}">{{ u }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div><label>Função (título público) *</label><input name="cargo" required placeholder="Ex.: Diretor Geral" /></div>
+    <div><label>Função no sistema</label>
+      <select name="perfil_cargo" id="ld-member-perfil-cargo">
+        <option value="">— não vincular —</option>
+        {% for code, label in allowed_roles|default([]) %}
+        <option value="{{ code }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div><label>E-mail para login</label><input name="account_email" type="email" id="ld-member-account-email" /></div>
+    <div><label>Data de entrada</label><input type="date" name="entry_date" /></div>
+    <div><label>Status</label>
+      <select name="status">
+        <option value="ativo">Ativo</option>
+        <option value="inativo">Inativo</option>
+      </select>
+    </div>
+  </div>
+</section>
+<section class="ld-drawer__section">
+  <h3>Informações adicionais</h3>
+  <div class="ld-form-2col">
+    <div class="span-2"><label>Observações</label><textarea name="notes" rows="2"></textarea></div>
+    <div><label>Área responsável</label><input name="responsible_area" /></div>
+    <div><label>Especialidades</label><input name="specialties" /></div>
+    <div class="span-2"><label>Sobre / mensagem pública</label><textarea name="bio" rows="3"></textarea></div>
+  </div>
+</section>
+<section class="ld-drawer__section">
+  <h3>Perfil público (portal família)</h3>
+  <div class="ld-form-2col">
+    <label class="ld-toggle"><input type="checkbox" name="show_phone_public" value="1" checked /> Mostrar telefone</label>
+    <label class="ld-toggle"><input type="checkbox" name="show_email_public" value="1" checked /> Mostrar e-mail</label>
+    <label class="ld-toggle"><input type="checkbox" name="show_social_public" value="1" /> Mostrar redes sociais</label>
+    <label class="ld-toggle"><input type="checkbox" name="show_bio_public" value="1" checked /> Mostrar descrição</label>
+  </div>
+</section>

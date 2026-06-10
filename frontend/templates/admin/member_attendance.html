@@ -1,0 +1,105 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Presença — {{ member.full_name }}{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/attendance-premium.css') }}" />
+{% endblock %}
+{% block content %}
+<div class="att-page ap-animate-in">
+  <header class="att-page-head">
+    <div>
+      <h1>Presença em reuniões</h1>
+      <p class="text-slate-600">{{ member.full_name }}{% if member.unit %} · {{ member.unit }}{% endif %}</p>
+    </div>
+    <a href="{{ url_for('admin.attendance_overview', **admin_nav_kw) }}" class="text-sm font-semibold text-blue-700 hover:underline">← Painel de presenças</a>
+  </header>
+
+  {% if att_total %}
+  <section class="att-kpi-row" style="max-width:420px">
+    <article class="att-kpi">
+      <div class="att-kpi__icon att-kpi__icon--green">✓</div>
+      <p class="att-kpi__label">Taxa geral</p>
+      <p class="att-kpi__value">{{ att_present }}/{{ att_total }}</p>
+      <p class="att-kpi__meta att-kpi__meta--up">{{ att_rate }}%</p>
+    </article>
+  </section>
+  {% endif %}
+
+  <div class="att-layout" style="grid-template-columns:1fr;gap:1rem">
+    <div class="att-card" style="max-width:520px">
+      <div class="att-card__head">
+        <h2>Registrar reunião</h2>
+      </div>
+      <form method="post" class="p-4 space-y-3 text-sm">
+        {% if member.clube_id %}
+        <input type="hidden" name="clube_id" value="{{ member.clube_id }}" />
+        {% endif %}
+        <div>
+          <label class="block text-slate-600 mb-1 font-semibold">Data da reunião</label>
+          <input type="date" name="meeting_date" required class="att-meeting-date-input w-full" />
+        </div>
+        <div>
+          <label class="block text-slate-600 mb-1 font-semibold">Situação</label>
+          <select name="status" class="att-meeting-date-input w-full">
+            <option value="presente">Presente</option>
+            <option value="falta">Falta</option>
+            <option value="atrasado">Atrasado</option>
+            <option value="justificado">Justificado</option>
+            <option value="dispensa">Dispensa</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-600 mb-1 font-semibold">Observação</label>
+          <input name="note" class="att-note-input w-full max-w-none border border-slate-200" />
+        </div>
+        <button type="submit" class="att-btn att-btn--navy">Salvar</button>
+      </form>
+    </div>
+
+    <div class="att-card">
+      <div class="att-card__head">
+        <h2>Histórico</h2>
+      </div>
+      <div class="att-table-wrap">
+        <table class="att-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Obs.</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in rows %}
+            <tr>
+              <td>{{ a.meeting_date.strftime('%d/%m/%Y') }}</td>
+              <td>
+                <span class="att-badge att-badge--{{ a.effective_status() }}">
+                  {% if a.effective_status() == 'presente' %}Presente
+                  {% elif a.effective_status() == 'falta' %}Falta
+                  {% elif a.effective_status() == 'atrasado' %}Atrasado
+                  {% elif a.effective_status() == 'justificado' %}Justificado
+                  {% elif a.effective_status() == 'dispensa' %}Dispensa
+                  {% else %}{{ a.effective_status() }}{% endif %}
+                </span>
+              </td>
+              <td class="text-slate-500 text-xs">{{ a.note or '—' }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin.attendance_delete', member_id=member.id, att_id=a.id) }}" class="inline" onsubmit="return confirm('Excluir este registro?');">
+                  {% if member.clube_id %}
+                  <input type="hidden" name="clube_id" value="{{ member.clube_id }}" />
+                  {% endif %}
+                  <button type="submit" class="att-btn att-btn--ghost" style="padding:0.35rem 0.65rem;font-size:0.72rem">Excluir</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-slate-500 py-8">Sem registros.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

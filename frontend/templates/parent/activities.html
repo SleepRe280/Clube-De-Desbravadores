@@ -1,0 +1,295 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Atividades{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/parent-activities-premium.css') }}" />
+{% endblock %}
+{% block content %}
+{% if act_page and act_page.has_notebook %}
+<div id="pa-app" class="pa-page" data-class="{{ act_page.class_slug }}">
+  {# —— Saudação da página —— #}
+  <header class="pa-intro">
+    <div>
+      <h2 class="pa-intro__title">Olá, {{ act_page.child_first_name }}! 👋</h2>
+      <p class="pa-intro__sub">Acompanhe as atividades do {{ act_page.child_first_name }} de forma fácil e organizada.</p>
+    </div>
+  </header>
+
+  {# —— Banner + progresso da classe —— #}
+  <section class="pa-banner" aria-label="Atividades e progresso">
+    <div class="pa-banner__content">
+      <div class="pa-banner__icon" aria-hidden="true">📋</div>
+      <div class="pa-banner__text">
+        <h1 class="pa-banner__title">Atividades do {{ act_page.child_first_name }}</h1>
+        <p class="pa-banner__desc">Classe <strong>{{ act_page.class_name }}</strong> · {{ act_page.progress.done }} de {{ act_page.progress.total }} concluídas ({{ act_page.progress.percent }}%)</p>
+        <div class="pa-banner__progress" role="progressbar" aria-valuenow="{{ act_page.progress.percent }}" aria-valuemin="0" aria-valuemax="100">
+          <span class="pa-banner__progress-fill" style="width: {{ act_page.progress.percent }}%"></span>
+        </div>
+      </div>
+    </div>
+    <div class="pa-banner__art" aria-hidden="true">🎒</div>
+  </section>
+
+  {# —— Cards de resumo —— #}
+  <section class="pa-kpi-row" aria-label="Resumo rápido">
+    <article class="pa-kpi">
+      <div class="pa-kpi__icon pa-kpi__icon--blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </div>
+      <p class="pa-kpi__value" data-pa-count="{{ act_page.stats.pending }}">0</p>
+      <p class="pa-kpi__label">Para fazer</p>
+    </article>
+    <article class="pa-kpi">
+      <div class="pa-kpi__icon pa-kpi__icon--amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <p class="pa-kpi__value" data-pa-count="{{ act_page.stats.in_progress }}">0</p>
+      <p class="pa-kpi__label">Em andamento</p>
+    </article>
+    <article class="pa-kpi">
+      <div class="pa-kpi__icon pa-kpi__icon--green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <p class="pa-kpi__value" data-pa-count="{{ act_page.stats.completed }}">0</p>
+      <p class="pa-kpi__label">Concluídas</p>
+    </article>
+    <article class="pa-kpi">
+      <div class="pa-kpi__icon pa-kpi__icon--purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      </div>
+      <p class="pa-kpi__value" data-pa-count="{{ act_page.stats.total }}">0</p>
+      <p class="pa-kpi__label">Total</p>
+    </article>
+  </section>
+
+  {# —— Layout principal: lista + painel lateral —— #}
+  <div class="pa-layout">
+    <div class="pa-main-col">
+      <nav class="pa-categories" aria-label="Filtrar por seção do caderno">
+        {% for cat in act_page.categories %}
+        <button type="button" class="pa-cat-btn {% if cat.slug == 'todas' %}is-active{% endif %}" data-category="{{ cat.slug }}">
+          {{ cat.label }}
+          <span class="pa-cat-btn__count">{{ cat.count }}</span>
+        </button>
+        {% endfor %}
+      </nav>
+
+      <section class="pa-list-section" aria-labelledby="pa-list-title">
+        <div class="pa-list-head">
+          <h2 id="pa-list-title">Atividades pendentes</h2>
+          <div class="pa-list-tools">
+            <label class="sr-only" for="pa-sort">Ordenar</label>
+            <select id="pa-sort" class="pa-sort">
+              <option value="status">Por status</option>
+              <option value="recent">Mais recentes</option>
+              <option value="title">Título A–Z</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="pa-activity-list" class="pa-activity-list" role="list">
+          {% set status_order = {'homework': '1', 'rejected': '2', 'pending_review': '3', 'expired': '4', 'catalog': '5', 'completed': '6'} %}
+          {% set pending_keys = ['homework', 'rejected', 'expired', 'pending_review'] %}
+          {% for card in act_page.activity_cards %}
+          <article
+            class="pa-activity {% if card.status_key not in pending_keys %}pa-activity--extra{% endif %}"
+            role="listitem"
+            data-category="{{ card.section_slug }}"
+            data-title="{{ card.title|lower }}"
+            data-status-key="{{ card.status_key }}"
+            data-status-order="{{ status_order.get(card.status_key, '9') }}"
+            data-sort-ts="{{ card.updated_at.timestamp()|int if card.updated_at else 0 }}"
+            data-pending="{{ '1' if card.status_key in pending_keys else '0' }}"
+          >
+            <button
+              type="button"
+              class="pa-activity__row"
+              data-pa-action="{% if card.can_submit and card.homework_id %}submit{% elif card.status_key == 'completed' %}certificate{% else %}details{% endif %}"
+              data-homework-id="{{ card.homework_id or '' }}"
+              data-title="{% if card.number_label %}{{ card.number_label }} {% endif %}{{ card.title }}"
+            >
+              <span class="pa-activity__icon" aria-hidden="true">{{ card.section_code or '📘' }}</span>
+              <span class="pa-activity__body">
+                <span class="pa-activity__title">{% if card.number_label %}{{ card.number_label }} {% endif %}{{ card.title }}</span>
+                <span class="pa-activity__meta">
+                  <span class="pa-activity__tag">{{ card.section_label }}</span>
+                  <span class="pa-activity__due">Prazo: {{ card.due_label }}</span>
+                </span>
+              </span>
+              <span class="pa-status {{ card.status_css }}">{{ card.status_label }}</span>
+              <span class="pa-activity__chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+              </span>
+            </button>
+            {# Dados ocultos para o modal de detalhes #}
+            <span class="pa-activity__desc-hidden" hidden>{{ card.description }}</span>
+            <span class="pa-activity__xp-hidden" hidden>{{ card.xp_label }}</span>
+            <span class="pa-activity__action-hidden" hidden data-can-submit="{{ '1' if card.can_submit and card.homework_id else '0' }}">{{ card.action_label }}</span>
+          </article>
+          {% else %}
+          <p class="pa-empty">Nenhuma atividade encontrada para esta classe.</p>
+          {% endfor %}
+        </div>
+
+        <button type="button" id="pa-toggle-all" class="pa-view-all" aria-expanded="false">
+          Ver todas as atividades
+        </button>
+      </section>
+    </div>
+
+    <aside class="pa-sidebar-col" aria-label="Resumo e informações">
+      {# Visão geral — gráfico #}
+      <section class="pa-panel pa-panel--chart">
+        <h3 class="pa-panel__title">Visão geral</h3>
+        <div class="pa-chart-wrap">
+          <div
+            class="pa-donut"
+            style="--pa-seg-pending: {{ act_page.overview.pending_pct }}; --pa-seg-progress: {{ act_page.overview.in_progress_pct }}; --pa-seg-done: {{ act_page.overview.completed_pct }};"
+            role="img"
+            aria-label="Gráfico: {{ act_page.overview.pending_pct }}% pendentes, {{ act_page.overview.in_progress_pct }}% em andamento, {{ act_page.overview.completed_pct }}% concluídas"
+          >
+            <div class="pa-donut__hole">
+              <span class="pa-donut__pct">{{ act_page.progress.percent }}%</span>
+              <span class="pa-donut__lbl">progresso</span>
+            </div>
+          </div>
+          <ul class="pa-chart-legend">
+            <li><span class="pa-chart-legend__dot pa-chart-legend__dot--blue"></span>Para fazer <strong>{{ act_page.overview.pending }}</strong> <em>({{ act_page.overview.pending_pct }}%)</em></li>
+            <li><span class="pa-chart-legend__dot pa-chart-legend__dot--amber"></span>Em andamento <strong>{{ act_page.overview.in_progress }}</strong> <em>({{ act_page.overview.in_progress_pct }}%)</em></li>
+            <li><span class="pa-chart-legend__dot pa-chart-legend__dot--green"></span>Concluídas <strong>{{ act_page.overview.completed }}</strong> <em>({{ act_page.overview.completed_pct }}%)</em></li>
+          </ul>
+        </div>
+        <p class="pa-chart-total">Total de atividades: <strong>{{ act_page.overview.total }}</strong></p>
+      </section>
+
+      {# Concluídas recentemente #}
+      <section class="pa-panel">
+        <div class="pa-panel__head">
+          <h3 class="pa-panel__title">Atividades concluídas recentemente</h3>
+          {% if act_page.stats.completed > 5 %}
+          <button type="button" class="pa-panel__link" id="pa-show-completed">Ver todas</button>
+          {% endif %}
+        </div>
+        <ul class="pa-recent-list">
+          {% for item in act_page.recent_completed %}
+          <li class="pa-recent-item">
+            <span class="pa-recent-item__check" aria-hidden="true">✓</span>
+            <span class="pa-recent-item__body">
+              <span class="pa-recent-item__title">{{ item.title }}</span>
+              <span class="pa-recent-item__meta">
+                <span class="pa-activity__tag">{{ item.section_label }}</span>
+                <span>{{ item.due_label }}</span>
+              </span>
+            </span>
+          </li>
+          {% else %}
+          <li class="pa-recent-empty">Nenhuma atividade concluída ainda.</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      {# Linha do tempo compacta #}
+      {% if act_page.timeline %}
+      <section class="pa-panel pa-panel--timeline">
+        <h3 class="pa-panel__title">Em andamento</h3>
+        <p class="pa-timeline-title"><strong>{{ act_page.timeline.title }}</strong></p>
+        <div class="pa-timeline-mini" role="list">
+          {% for step in act_page.timeline.steps %}
+          <div class="pa-timeline-mini__step pa-timeline-mini__step--{{ step.state }}" role="listitem" title="{{ step.label }}">
+            <span class="pa-timeline-mini__dot"></span>
+            <span class="pa-timeline-mini__label">{{ step.label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% if act_page.timeline.card %}
+        <button
+          type="button"
+          class="pa-btn pa-btn--outline pa-btn--sm"
+          data-pa-action="{% if act_page.timeline.card.can_submit %}submit{% else %}details{% endif %}"
+          data-homework-id="{{ act_page.timeline.card.homework_id or '' }}"
+          data-title="{{ act_page.timeline.title }}"
+          data-desc="{{ act_page.timeline.card.description or '' }}"
+          data-status="{{ act_page.timeline.card.status_label }}"
+          data-status-class="{{ act_page.timeline.card.status_css }}"
+          data-due="Prazo: {{ act_page.timeline.card.due_label }}"
+          data-xp="{{ act_page.timeline.card.xp_label }}"
+        >Ver detalhes</button>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {# Conquistas resumidas #}
+      <section class="pa-panel pa-panel--achieve">
+        <h3 class="pa-panel__title">Minhas conquistas</h3>
+        <ul class="pa-achieve-mini">
+          <li>🎖️ Medalhas: <strong>{{ act_page.achievements.medals_count }}</strong></li>
+          <li>⭐ Especialidades: <strong>{{ act_page.achievements.specialties_count }}</strong></li>
+          <li>✓ Concluídas: <strong data-pa-count="{{ act_page.achievements.activities_completed }}">0</strong></li>
+        </ul>
+        {% if act_page.achievements.progress_url %}
+        <a href="{{ act_page.achievements.progress_url }}" class="pa-btn pa-btn--outline pa-btn--sm">Ver todas conquistas</a>
+        {% endif %}
+      </section>
+
+      {# Suporte #}
+      <section class="pa-panel pa-panel--support">
+        <h3 class="pa-panel__title">Dúvidas ou problemas?</h3>
+        <p class="pa-support-text">Fale com a diretoria do clube.</p>
+        {% if act_page.communications_url %}
+        <a href="{{ act_page.communications_url }}" class="pa-btn pa-btn--primary pa-btn--sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          Enviar mensagem
+        </a>
+        {% endif %}
+      </section>
+    </aside>
+  </div>
+</div>
+
+{# Modal envio / detalhes #}
+<div id="pa-evidence-modal" class="pa-modal" role="dialog" aria-modal="true" aria-labelledby="pa-modal-title">
+  <div class="pa-modal__backdrop"></div>
+  <div class="pa-modal__panel">
+    <button type="button" class="pa-modal__close" aria-label="Fechar">×</button>
+    <h3 id="pa-modal-title" class="pa-modal__heading">Enviar evidência</h3>
+    <p class="pa-modal__sub">Anexe foto, vídeo ou texto da tarefa realizada.</p>
+    <form id="pa-evidence-form" method="post" action="{{ act_page.homework_submit_url }}" enctype="multipart/form-data" class="pa-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="assignment_id" value="" />
+      <label class="pa-form__label">Tipo de evidência</label>
+      <select name="evidence_type" class="pa-form__input">
+        <option value="texto">Texto</option>
+        <option value="foto">Foto</option>
+        <option value="video">Vídeo</option>
+        <option value="pdf">PDF</option>
+        <option value="audio">Áudio</option>
+        <option value="arquivo">Arquivo</option>
+      </select>
+      <label class="pa-form__label">Comentário ou texto</label>
+      <textarea name="text_content" rows="3" class="pa-form__input" placeholder="Descreva o que foi feito…"></textarea>
+      <label class="pa-form__label">Anexo</label>
+      <input type="file" name="evidence_file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" class="pa-form__input pa-form__file" />
+      <button type="submit" class="pa-btn pa-btn--primary">Enviar evidência</button>
+    </form>
+  </div>
+</div>
+
+{% elif portal_child %}
+<div class="pa-page">
+  <div class="pa-empty">
+    <p class="font-bold text-navy-900 mb-2">Caderno em configuração</p>
+    <p class="text-sm">O caderno digital deste desbravador ainda está sendo preparado. Volte em breve ou fale com a diretoria do clube.</p>
+    <a href="{{ (portal_nav|default({})).progress|default('/pais/progresso') }}" class="inline-block mt-4 text-sm font-semibold text-gold-600 hover:underline">Ver progresso geral →</a>
+  </div>
+</div>
+{% else %}
+<div class="pa-page">
+  <div class="pa-empty">
+    <p class="font-bold text-navy-900 mb-2">Selecione um desbravador</p>
+    <p class="text-sm">Vincule um filho ao seu perfil para acompanhar as atividades do caderno digital.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/parent-activities-premium.js') }}" defer></script>
+{% endblock %}

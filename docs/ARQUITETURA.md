@@ -6,24 +6,20 @@ Aplicação **Flask** monolítica com **SQLite**, autenticação por papéis (`a
 
 ```
 Projeto Duque De Caxias/
-├── app/
-│   ├── __init__.py          # create_app, blueprints, uploads, migrate
-│   ├── auth.py              # login, cadastro, recuperação de senha
-│   ├── admin_routes.py      # painel da diretoria
-│   ├── parent_routes.py     # área família (estilo rede social)
-│   ├── models.py            # SQLAlchemy
-│   ├── extensions.py        # db
-│   ├── db_migrate.py        # ALTER TABLE SQLite incremental
-│   ├── uploads_util.py      # salvar imagens
+├── backend/
+│   ├── app/                 # Python: create_app, blueprints, models, migrate
+│   ├── config.py
+│   ├── run.py
+│   ├── wsgi.py
+│   └── requirements*.txt
+├── frontend/
 │   ├── static/css/          # arquitetura de estilos (ver abaixo)
 │   └── templates/           # HTML por área (admin/, parent/, auth/)
-├── config.py
-├── run.py
 ├── instance/                # club.db + uploads (gitignore)
 └── docs/ARQUITETURA.md
 ```
 
-## Camada CSS (`app/static/css/`)
+## Camada CSS (`frontend/static/css/`)
 
 Ordem de import em **`app.css`**:
 

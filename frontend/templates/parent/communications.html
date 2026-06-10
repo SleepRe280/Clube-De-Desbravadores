@@ -1,0 +1,130 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Comunicados{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/communications-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set default_img = url_for('static', filename='img/login-nature.jpg') %}
+{% set nav_q = request.args.to_dict() %}
+<div
+  id="cm-app"
+  class="cm-page"
+  data-default-img="{{ default_img }}"
+>
+  <script id="cm-hero-data" type="application/json">{{ hero_carousel|tojson }}</script>
+
+  <header class="cm-page-head">
+    <div>
+      <h1>Comunicados da diretoria</h1>
+      <p>Informações importantes para os pais e responsáveis — tudo o que você precisa saber sobre o clube, em um só lugar.</p>
+    </div>
+  </header>
+
+  <div class="cm-layout">
+    <div class="cm-main">
+      {% if hero %}
+      <section class="cm-hero" aria-label="Destaque">
+        <div class="cm-hero__bg" id="cm-hero-bg" style="background-image:url('{{ hero.image_url }}')"></div>
+        <div class="cm-hero__overlay"></div>
+        <div class="cm-hero__dots" id="cm-hero-dots" aria-hidden="true"></div>
+        <div class="cm-hero__body">
+          {% if hero.is_urgent or hero.is_featured %}
+          <span class="cm-hero__badge">{% if hero.is_urgent %}⚠ Aviso importante{% else %}✦ Em destaque{% endif %}</span>
+          {% endif %}
+          <h2 class="cm-hero__title" id="cm-hero-title">{{ hero.title }}</h2>
+          <p class="cm-hero__desc" id="cm-hero-desc">{{ hero.excerpt }}</p>
+          <div class="cm-hero__meta">
+            {% if hero.event_date_label %}<span id="cm-hero-date">📅 {{ hero.event_date_label }}</span>{% endif %}
+            {% if hero.location %}<span id="cm-hero-location">📍 {{ hero.location }}</span>{% endif %}
+          </div>
+          <div class="cm-hero__actions">
+            <a href="#" class="cm-hero__cta" id="cm-hero-detail" data-cm-detail="{{ hero.id }}">Ver mais detalhes</a>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+      <nav class="cm-filters" aria-label="Filtrar comunicados">
+        {% for code, label in filter_chips %}
+        <a
+          href="{{ url_for('parent.parent_communications', filtro=code) }}"
+          class="cm-filter {% if active_filter == code %}is-active{% endif %}"
+        >{{ label }}</a>
+        {% endfor %}
+      </nav>
+
+      <div class="cm-feed">
+        {% for item in items %}
+        <article
+          class="cm-card {% if loop.index > 6 %}is-hidden{% endif %}"
+          data-id="{{ item.id }}"
+          data-title="{{ item.title|e }}"
+          data-body="{{ item.body|e }}"
+        >
+          <div class="cm-card__thumb-wrap">
+            <div class="cm-card__thumb" style="background-image:url('{{ item.image_url }}')" role="img" aria-label=""></div>
+            <button type="button" class="cm-card__bookmark" data-cm-bookmark="{{ item.id }}" aria-label="Salvar comunicado">☆</button>
+          </div>
+          <div class="cm-card__body">
+            <span class="cm-tag {{ item.category_css }}">{{ item.category_label }}</span>
+            <h3 class="cm-card__title">{{ item.title }}</h3>
+            <p class="cm-card__excerpt">{{ item.excerpt }}</p>
+            <div class="cm-card__meta">
+              {% if item.event_date_label %}<span>📅 {{ item.event_date_label }}</span>{% endif %}
+              {% if item.location %}<span>📍 {{ item.location }}</span>{% endif %}
+              {% if item.has_attachment and item.attachment_url %}
+              <a href="{{ item.attachment_url }}" class="cm-card__attach" target="_blank" rel="noopener">📎 Baixar anexo</a>
+              {% endif %}
+            </div>
+          </div>
+          <div class="cm-card__side">
+            {% if item.is_read %}
+            <span class="cm-read-btn is-done" aria-disabled="true">✓ Li o comunicado</span>
+            {% else %}
+            <form method="post" action="{{ url_for('parent.parent_mark_comunicado_read', post_id=item.id) }}">
+              <input type="hidden" name="next" value="{{ request.url }}" />
+              <button type="submit" class="cm-read-btn">✓ Li o comunicado</button>
+            </form>
+            {% endif %}
+            <span class="cm-card__reads">{{ item.read_count }} família(s) confirmaram</span>
+            <span class="cm-card__time">{{ item.relative_time }}</span>
+            <button type="button" class="cm-card__more" data-cm-detail="{{ item.id }}">Mais informações →</button>
+          </div>
+        </article>
+        {% else %}
+        <p class="cm-empty">Nenhum comunicado por aqui ainda. A diretoria avisará em breve! 💛</p>
+        {% endfor %}
+      </div>
+
+      {% if items|length > 6 %}
+      <div class="cm-load-more">
+        <button type="button" id="cm-load-more">Ver mais comunicados ↓</button>
+      </div>
+      {% endif %}
+    </div>
+
+    {% include "shared/partials/communications_sidebar.html" %}
+  </div>
+</div>
+
+<div id="cm-detail-modal" class="cm-detail-modal" aria-hidden="true">
+  <div class="cm-detail-panel" role="dialog" aria-modal="true" aria-labelledby="cm-detail-title">
+    <header class="cm-detail-panel__head">
+      <span class="cm-tag cm-tag--aviso" id="cm-detail-tag">Comunicado</span>
+      <button type="button" class="cm-detail-close" data-cm-detail-close aria-label="Fechar detalhes">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </header>
+    <div class="cm-detail-panel__body">
+      <h3 id="cm-detail-title" class="cm-detail-panel__title"></h3>
+      <p id="cm-detail-body" class="cm-detail-panel__text"></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/communications-premium.js') }}" defer></script>
+{% endblock %}

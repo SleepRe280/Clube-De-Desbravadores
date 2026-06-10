@@ -1,0 +1,322 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Almoxarifado{% endblock %}
+{% block header_sub %}Controle de estoque, entradas e saídas do clube{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/warehouse-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div id="wh-app" class="wh-page ap-animate-in" data-active-tab="{{ active_tab|default('dashboard') }}" data-clube-id="{{ admin_scope_clube_id or '' }}">
+  <header class="wh-page-head">
+    <div>
+      <h1>Almoxarifado</h1>
+      <p>Gestão visual de materiais, uniformes e equipamentos — entradas, saídas e alertas de estoque.</p>
+    </div>
+    {% if can_write_warehouse and wh %}
+    <div class="wh-head-actions">
+      <button type="button" class="wh-btn wh-btn--navy" id="wh-btn-new-item">+ Novo item</button>
+    </div>
+    {% endif %}
+  </header>
+
+  {% if admin_needs_clube_scope and not admin_scope_clube_id %}
+  <div class="wh-scope-empty">
+    <p style="margin:0;font-weight:700;color:#0d1b3e">Selecione um clube</p>
+    <p style="margin:0.5rem 0 0;font-size:0.88rem;color:#64748b">Use o seletor no topo do painel para gerenciar o almoxarifado.</p>
+  </div>
+  {% elif not wh %}
+  <div class="wh-scope-empty">
+    <p style="margin:0;color:#64748b">Nenhum dado disponível.</p>
+  </div>
+  {% else %}
+  {% set s = wh.summary %}
+
+  <nav class="wh-tabs" aria-label="Seções do almoxarifado">
+    <button type="button" class="wh-tab {% if active_tab == 'dashboard' %}is-active{% endif %}" data-wh-tab="dashboard">Dashboard</button>
+    <button type="button" class="wh-tab {% if active_tab == 'items' %}is-active{% endif %}" data-wh-tab="items">Itens</button>
+    <button type="button" class="wh-tab {% if active_tab == 'entradas' %}is-active{% endif %}" data-wh-tab="entradas">Entradas</button>
+    <button type="button" class="wh-tab {% if active_tab == 'saidas' %}is-active{% endif %}" data-wh-tab="saidas">Saídas</button>
+    <button type="button" class="wh-tab {% if active_tab == 'historico' %}is-active{% endif %}" data-wh-tab="historico">Histórico</button>
+    <button type="button" class="wh-tab {% if active_tab == 'categorias' %}is-active{% endif %}" data-wh-tab="categorias">Categorias</button>
+  </nav>
+
+  <section class="wh-kpi-row" aria-label="Resumo do almoxarifado">
+    <article class="wh-kpi">
+      <div class="wh-kpi__icon wh-kpi__icon--blue">📦</div>
+      <p class="wh-kpi__label">Total de itens</p>
+      <p class="wh-kpi__value">{{ s.total_items }}</p>
+    </article>
+    <article class="wh-kpi">
+      <div class="wh-kpi__icon wh-kpi__icon--amber">⚠</div>
+      <p class="wh-kpi__label">Estoque baixo</p>
+      <p class="wh-kpi__value">{{ s.low_count }}</p>
+      {% if s.low_count %}<p class="wh-kpi__meta wh-kpi__meta--warn">Requer atenção</p>{% endif %}
+    </article>
+    <article class="wh-kpi">
+      <div class="wh-kpi__icon wh-kpi__icon--red">✕</div>
+      <p class="wh-kpi__label">Sem estoque</p>
+      <p class="wh-kpi__value">{{ s.out_count }}</p>
+      {% if s.out_count %}<p class="wh-kpi__meta wh-kpi__meta--down">Repor urgente</p>{% endif %}
+    </article>
+    <article class="wh-kpi">
+      <div class="wh-kpi__icon wh-kpi__icon--green">↓</div>
+      <p class="wh-kpi__label">Entradas (mês)</p>
+      <p class="wh-kpi__value">{{ s.month_in }}</p>
+      <p class="wh-kpi__meta wh-kpi__meta--up">unidades</p>
+    </article>
+    <article class="wh-kpi">
+      <div class="wh-kpi__icon wh-kpi__icon--violet">↑</div>
+      <p class="wh-kpi__label">Saídas (mês)</p>
+      <p class="wh-kpi__value">{{ s.month_out }}</p>
+    </article>
+    <article class="wh-kpi">
+      <div class="wh-kpi__icon wh-kpi__icon--slate">💰</div>
+      <p class="wh-kpi__label">Valor estimado</p>
+      <p class="wh-kpi__value" style="font-size:clamp(0.95rem,2vw,1.2rem)">{{ s.value_label }}</p>
+    </article>
+  </section>
+
+  <div class="wh-panel {% if active_tab == 'dashboard' %}is-active{% endif %}" data-wh-panel="dashboard">
+    <div class="wh-card">
+      <h2 class="wh-card__title">Itens que precisam de atenção</h2>
+      {% if wh.low_items %}
+      <div class="wh-grid">
+        {% for item in wh.low_items %}
+        <article class="wh-item-card">
+          <div class="wh-item-card__top">
+            <span class="wh-badge {{ item.status_css }}">{{ item.status_label }}</span>
+          </div>
+          <div class="wh-item-card__body">
+            <div class="wh-item-card__thumb" {% if item.photo_url %}style="background-image:url('{{ item.photo_url }}')"{% endif %}>{% if not item.photo_url %}📦{% endif %}</div>            <div class="wh-item-card__info">
+              <h3>{{ item.name }}</h3>
+              <p class="wh-item-card__meta"><strong>Estoque:</strong> {{ item.quantity }} {{ item.unit_label }} · <strong>Mín:</strong> {{ item.min_stock }}</p>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="wh-empty">Nenhum alerta de estoque no momento.</p>
+      {% endif %}
+    </div>
+    <div class="wh-card">
+      <h2 class="wh-card__title">Últimas movimentações</h2>
+      <div class="wh-table-wrap">
+        <table class="wh-table">
+          <thead><tr><th>Data</th><th>Item</th><th>Tipo</th><th>Qtd</th><th>Saldo</th>{% if can_write_warehouse %}<th></th>{% endif %}</tr></thead>
+          <tbody>
+            {% for m in wh.movements[:10] %}
+            <tr>
+              <td>{{ m.created_label }}</td>
+              <td>{{ m.item_name }}</td>
+              <td class="{% if m.direction == 'in' %}wh-dir-in{% else %}wh-dir-out{% endif %}">{{ m.direction_label }}</td>
+              <td>{{ m.quantity }}</td>
+              <td>{{ m.balance_after if m.balance_after is not none else '—' }}</td>
+              {% if can_write_warehouse %}
+              <td class="wh-table__actions">{% with active_tab='dashboard' %}{% include "admin/partials/warehouse_movement_delete.html" %}{% endwith %}</td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{% if can_write_warehouse %}6{% else %}5{% endif %}" class="wh-empty">Nenhuma movimentação.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="wh-panel {% if active_tab == 'items' %}is-active{% endif %}" data-wh-panel="items">
+    <div class="wh-toolbar">
+      <div class="wh-search">
+        <span class="wh-search__icon" aria-hidden="true">🔍</span>
+        <input type="search" id="wh-search" placeholder="Buscar por nome, código ou categoria…" autocomplete="off" />
+      </div>
+      <select id="wh-filter-cat" aria-label="Filtrar categoria">
+        <option value="">Todas categorias</option>
+        {% for c in wh.categories %}
+        <option value="{{ c.name|lower }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+      <select id="wh-filter-status" aria-label="Filtrar status">
+        <option value="">Todos status</option>
+        <option value="ok">Em estoque</option>
+        <option value="low">Estoque baixo</option>
+        <option value="out">Sem estoque</option>
+      </select>
+      <select id="wh-sort" aria-label="Ordenar">
+        <option value="name">Nome A–Z</option>
+        <option value="name-desc">Nome Z–A</option>
+        <option value="qty-asc">Menor estoque</option>
+        <option value="qty-desc">Maior estoque</option>
+      </select>
+    </div>
+    <div class="wh-loading" id="wh-grid-loading" aria-live="polite">
+      <div class="wh-loading__spinner"></div>
+      <p>Carregando itens…</p>
+    </div>
+    <div class="wh-grid" id="wh-items-grid">
+      {% for item in wh.stock_items %}
+      <article class="wh-item-card" data-wh-item data-id="{{ item.id }}" data-name="{{ item.name|lower }}" data-code="{{ item.internal_code|lower }}" data-category="{{ item.category|lower }}" data-status="{{ item.status }}" data-qty="{{ item.quantity }}">
+        <div class="wh-item-card__top">
+          <span class="wh-badge {{ item.status_css }}">{{ item.status_label }}</span>
+          {% if can_write_warehouse %}
+          <button type="button" class="wh-item-card__menu" data-wh-edit="{{ item.id }}" aria-label="Editar">⋮</button>
+          {% endif %}
+        </div>
+        <div class="wh-item-card__body">
+          <div class="wh-item-card__thumb" {% if item.photo_url %}style="background-image:url('{{ item.photo_url }}')"{% endif %}>{% if not item.photo_url %}📦{% endif %}</div>
+          <div class="wh-item-card__info">
+            <h3>{{ item.name }}</h3>
+            <p class="wh-item-card__meta">
+              <strong>Código:</strong> {{ item.internal_code }}<br>
+              <strong>Categoria:</strong> {{ item.category }}<br>
+              <strong>Estoque:</strong> {{ item.quantity }} {{ item.unit_label }}<br>
+              <strong>Mínimo:</strong> {{ item.min_stock }}
+              {% if item.location != '—' %}<br><strong>Local:</strong> {{ item.location }}{% endif %}
+            </p>
+          </div>
+        </div>
+        {% if can_write_warehouse %}
+        <div class="wh-item-card__actions">
+          <button type="button" class="wh-mini wh-mini--in" data-wh-move="in" data-id="{{ item.id }}" data-name="{{ item.name|e }}">↓ Entrada</button>
+          <button type="button" class="wh-mini wh-mini--out" data-wh-move="out" data-id="{{ item.id }}" data-name="{{ item.name|e }}">↑ Saída</button>
+          <button type="button" class="wh-mini wh-mini--edit" data-wh-edit="{{ item.id }}">Editar</button>
+          <button type="button" class="wh-mini wh-mini--hist" data-wh-hist="{{ item.id }}">Histórico</button>
+        </div>
+        {% endif %}
+      </article>
+      {% else %}
+      <p class="wh-empty" style="grid-column:1/-1">Nenhum item cadastrado. Clique em «Novo item».</p>
+      {% endfor %}
+    </div>
+    <p class="wh-empty is-hidden" id="wh-no-results">Nenhum item corresponde aos filtros.</p>
+  </div>
+
+  <div class="wh-panel {% if active_tab == 'entradas' %}is-active{% endif %}" data-wh-panel="entradas">
+    <div class="wh-card">
+      <h2 class="wh-card__title">Entradas registradas</h2>
+      <div class="wh-table-wrap">
+        <table class="wh-table">
+          <thead><tr><th>Data</th><th>Item</th><th>Qtd</th><th>Obs.</th><th>Responsável</th>{% if can_write_warehouse %}<th></th>{% endif %}</tr></thead>
+          <tbody>
+            {% for m in wh.movements if m.direction == 'in' %}
+            <tr>
+              <td>{{ m.created_label }}</td><td>{{ m.item_name }}</td>
+              <td class="wh-dir-in">+{{ m.quantity }}</td>
+              <td>{{ m.notes or '—' }}</td><td>{{ m.created_by }}</td>
+              {% if can_write_warehouse %}
+              <td class="wh-table__actions">{% with active_tab='entradas' %}{% include "admin/partials/warehouse_movement_delete.html" %}{% endwith %}</td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{% if can_write_warehouse %}6{% else %}5{% endif %}" class="wh-empty">Nenhuma entrada.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="wh-panel {% if active_tab == 'saidas' %}is-active{% endif %}" data-wh-panel="saidas">
+    <div class="wh-card">
+      <h2 class="wh-card__title">Saídas registradas</h2>
+      <div class="wh-table-wrap">
+        <table class="wh-table">
+          <thead><tr><th>Data</th><th>Item</th><th>Qtd</th><th>Obs.</th><th>Responsável</th>{% if can_write_warehouse %}<th></th>{% endif %}</tr></thead>
+          <tbody>
+            {% for m in wh.movements if m.direction == 'out' %}
+            <tr>
+              <td>{{ m.created_label }}</td><td>{{ m.item_name }}</td>
+              <td class="wh-dir-out">-{{ m.quantity }}</td>
+              <td>{{ m.notes or '—' }}</td><td>{{ m.created_by }}</td>
+              {% if can_write_warehouse %}
+              <td class="wh-table__actions">{% with active_tab='saidas' %}{% include "admin/partials/warehouse_movement_delete.html" %}{% endwith %}</td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{% if can_write_warehouse %}6{% else %}5{% endif %}" class="wh-empty">Nenhuma saída.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="wh-panel {% if active_tab == 'historico' %}is-active{% endif %}" data-wh-panel="historico">
+    <div class="wh-card">
+      <h2 class="wh-card__title">Histórico completo</h2>
+      <div class="wh-toolbar" style="margin-bottom:0.75rem;box-shadow:none;border:none;padding:0">
+        <div class="wh-search" style="flex:1">
+          <span class="wh-search__icon">🔍</span>
+          <input type="search" id="wh-hist-search" placeholder="Filtrar histórico…" />
+        </div>
+      </div>
+      <div class="wh-table-wrap">
+        <table class="wh-table" id="wh-hist-table">
+          <thead><tr><th>Data</th><th>Item</th><th>Tipo</th><th>Qtd</th><th>Saldo</th><th>Obs.</th><th>Responsável</th>{% if can_write_warehouse %}<th></th>{% endif %}</tr></thead>
+          <tbody>
+            {% for m in wh.movements %}
+            <tr data-hist-row data-text="{{ (m.item_name ~ ' ' ~ m.direction_label ~ ' ' ~ (m.notes or ''))|lower }}">
+              <td>{{ m.created_label }}</td>
+              <td>{{ m.item_name }}</td>
+              <td class="{% if m.direction == 'in' %}wh-dir-in{% else %}wh-dir-out{% endif %}">{{ m.direction_label }}</td>
+              <td>{{ m.quantity }}</td>
+              <td>{{ m.balance_after if m.balance_after is not none else '—' }}</td>
+              <td>{{ m.notes or '—' }}</td>
+              <td>{{ m.created_by }}</td>
+              {% if can_write_warehouse %}
+              <td class="wh-table__actions">{% with active_tab='historico' %}{% include "admin/partials/warehouse_movement_delete.html" %}{% endwith %}</td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{% if can_write_warehouse %}8{% else %}7{% endif %}" class="wh-empty">Sem histórico.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="wh-panel {% if active_tab == 'categorias' %}is-active{% endif %}" data-wh-panel="categorias">
+    <div class="wh-card">
+      <h2 class="wh-card__title">Categorias de itens</h2>
+      {% if can_write_warehouse %}
+      <form method="post" action="{{ url_for('admin.warehouse_category_create') }}" class="wh-toolbar" style="margin-top:0">
+        {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+        <input type="text" name="name" required maxlength="80" placeholder="Nova categoria…" style="flex:1;padding:0.55rem 0.7rem;border:1px solid #e2e8f0;border-radius:0.6rem" />
+        <button type="submit" class="wh-btn wh-btn--gold">Adicionar</button>
+      </form>
+      {% endif %}
+      <div class="wh-cat-list" style="margin-top:0.85rem">
+        {% for c in wh.categories %}
+        {% set n_items = wh.category_counts.get(c.id, 0) %}
+        <div class="wh-cat-row">
+          <div><strong>{{ c.name }}</strong><span> · {{ n_items }} item(ns)</span></div>
+          {% if can_write_warehouse and n_items == 0 %}
+          <form method="post" action="{{ url_for('admin.warehouse_category_delete', cat_id=c.id) }}" onsubmit="return confirm('Excluir categoria?');">
+            {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+            <button type="submit" class="wh-mini wh-mini--out" style="flex:none;min-width:auto">Excluir</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <script id="wh-items-data" type="application/json">{{ wh.stock_items|tojson }}</script>
+  <script id="wh-movements-data" type="application/json">{{ wh.movements|tojson }}</script>
+  {% endif %}
+</div>
+
+{% if can_write_warehouse and wh %}
+{% include "admin/partials/warehouse_drawers.html" %}
+{% endif %}
+{% endblock %}
+
+{% block page_scripts %}
+{% if wh %}
+<script src="{{ url_for('static', filename='js/warehouse-premium.js') }}" defer></script>
+{% endif %}
+{% endblock %}

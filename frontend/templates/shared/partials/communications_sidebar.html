@@ -1,0 +1,66 @@
+{# Widgets laterais — próximos eventos, urgentes, documentos, lembretes #}
+<aside class="cm-aside" aria-label="Informações complementares">
+  <div class="cm-widget">
+    <h3 class="cm-widget__title">📅 Próximos eventos</h3>
+    {% if sidebar_events %}
+    {% for ev in sidebar_events %}
+    <div class="cm-event-row">
+      <div class="cm-event-date">
+        <strong>{{ ev.day }}</strong>
+        <span>{{ ev.month }}</span>
+      </div>
+      <div class="cm-event-info">
+        <h4>{{ ev.title }}</h4>
+        <p>{% if ev.time %}{{ ev.time }}{% endif %}{% if ev.location %} · {{ ev.location }}{% endif %}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-xs text-slate-500">Nenhum evento próximo — confira a agenda do clube.</p>
+    {% endif %}
+    {% if request.blueprint == 'admin' %}
+    <a href="{{ url_for('admin.agenda_list', **admin_nav_kw) }}" class="cm-widget__link">Ver todos os eventos →</a>
+    {% else %}
+    <a href="{{ url_for('parent.parent_agenda') }}" class="cm-widget__link">Ver todos os eventos →</a>
+    {% endif %}
+  </div>
+
+  {% if sidebar_urgent %}
+  <div class="cm-widget cm-urgent">
+    <h3 class="cm-widget__title">⚠️ Avisos urgentes</h3>
+    {% for u in sidebar_urgent %}
+    <div class="cm-urgent-card">
+      <h4>{{ u.title }}</h4>
+      <p>{{ u.excerpt }}</p>
+      <a href="#" class="cm-urgent-cta" data-cm-detail="{{ u.id }}">Ver mais detalhes</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="cm-widget">
+    <h3 class="cm-widget__title">📎 Documentos recentes</h3>
+    {% if sidebar_documents %}
+    {% for doc in sidebar_documents %}
+    <a href="{{ doc.url }}" class="cm-doc-row" target="_blank" rel="noopener">
+      <span class="cm-doc-icon cm-doc-icon--{{ doc.ext }}">{{ doc.ext|upper }}</span>
+      <span class="cm-doc-info">
+        <strong>{{ doc.name }}</strong>
+        <span>{{ doc.title }}</span>
+      </span>
+    </a>
+    {% endfor %}
+    {% else %}
+    <p class="text-xs text-slate-500">Nenhum anexo recente nos comunicados.</p>
+    {% endif %}
+  </div>
+
+  {% if sidebar_reminders %}
+  <div class="cm-widget">
+    <h3 class="cm-widget__title">💛 Lembretes</h3>
+    {% for r in sidebar_reminders %}
+    <p class="cm-reminder"><span>{{ r.icon }}</span> {{ r.text }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+</aside>

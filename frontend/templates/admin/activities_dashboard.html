@@ -1,0 +1,342 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Atividades{% endblock %}
+{% block header_sub %}Caderno digital, progresso e atividades para casa{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/activities-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set show_catalog = request.args.get('catalogo') %}
+{% set show_table = active_tab == 'desbravadores' and not show_catalog and active_tab != 'tarefas' and active_tab != 'aprovacoes' and active_tab != 'relatorios' %}
+
+<div id="act-app" class="act-page ap-animate-in" data-clube-id="{{ admin_scope_clube_id or '' }}">
+  <header class="act-page-head">
+    <div class="act-page-head__text">
+      <h1>Atividades</h1>
+      <p>Painel administrativo — cadernos oficiais, progresso e atividades para casa.</p>
+    </div>
+    <div class="act-toolbar">
+      {% if act %}
+      <a href="{{ url_for('admin.admin_activities', tab='desbravadores', catalogo=1, classe=act.active_class_slug, **admin_nav_kw) }}" class="act-btn act-btn--ghost">Gerenciar classes</a>
+      <button type="button" class="act-btn act-btn--navy" id="act-btn-new-homework">+ Nova atividade para casa</button>
+      <a href="{{ url_for('admin.admin_activities', tab='relatorios', **admin_nav_kw) }}" class="act-btn act-btn--ghost">Relatórios</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <nav class="act-tabs" aria-label="Seções">
+    <a href="{{ url_for('admin.admin_activities', tab='desbravadores', **admin_nav_kw) }}" class="act-tab {% if active_tab == 'desbravadores' and not show_catalog %}is-active{% endif %}">Visão geral</a>
+    <a href="{{ url_for('admin.admin_activities', tab='desbravadores', catalogo=1, classe=act.active_class_slug if act else 'amigo', **admin_nav_kw) }}" class="act-tab {% if show_catalog %}is-active{% endif %}">Cadernos</a>
+    <a href="{{ url_for('admin.admin_activities', tab='tarefas', **admin_nav_kw) }}" class="act-tab {% if active_tab == 'tarefas' %}is-active{% endif %}">Atividades para casa</a>
+    <a href="{{ url_for('admin.admin_activities', tab='aprovacoes', **admin_nav_kw) }}" class="act-tab {% if active_tab == 'aprovacoes' %}is-active{% endif %}">Aprovações{% if act and act.stats.pending_review %} <span class="act-tab-badge">{{ act.stats.pending_review }}</span>{% endif %}</a>
+    <a href="{{ url_for('admin.admin_activities', tab='relatorios', **admin_nav_kw) }}" class="act-tab {% if active_tab == 'relatorios' %}is-active{% endif %}">Relatórios</a>
+  </nav>
+
+  {% if admin_needs_clube_scope and not admin_scope_clube_id %}
+  <div class="act-scope-empty">
+    <p style="margin:0;font-weight:700;color:#0d1b3e">Selecione um clube</p>
+    <p style="margin:0.5rem 0 0;font-size:0.88rem;color:#64748b">Use o seletor no topo do painel.</p>
+  </div>
+  {% elif not act %}
+  <div class="act-scope-empty"><span class="act-loader" aria-hidden="true"></span> Carregando…</div>
+  {% else %}
+  {% set st = act.stats %}
+
+  <section class="act-kpi-row" aria-label="Resumo">
+    <article class="act-kpi">
+      <div class="act-kpi__icon act-kpi__icon--slate">👥</div>
+      <p class="act-kpi__label">Desbravadores</p>
+      <p class="act-kpi__value">{{ st.total_members }}</p>
+      <p class="act-kpi__meta"><a href="{{ url_for('admin.members', **admin_nav_kw) }}">Ver todos</a></p>
+    </article>
+    <article class="act-kpi">
+      <div class="act-kpi__icon act-kpi__icon--blue">📚</div>
+      <p class="act-kpi__label">Classes ativas</p>
+      <p class="act-kpi__value">{{ st.active_classes }}</p>
+      <p class="act-kpi__meta"><a href="{{ url_for('admin.admin_activities', catalogo=1, **admin_nav_kw) }}">Ver classes</a></p>
+    </article>
+    <article class="act-kpi act-kpi--highlight">
+      <div class="act-kpi__icon act-kpi__icon--green">✓</div>
+      <p class="act-kpi__label">Atividades concluídas</p>
+      <p class="act-kpi__value">{{ st.completed_total }} <span class="act-kpi__frac">/ {{ st.requirements_total }}</span></p>
+      <p class="act-kpi__meta act-kpi__meta--success">{{ st.club_progress_pct }}% do total</p>
+    </article>
+    <article class="act-kpi">
+      <div class="act-kpi__icon act-kpi__icon--amber">⏳</div>
+      <p class="act-kpi__label">Pendentes de avaliação</p>
+      <p class="act-kpi__value">{{ st.pending_review }}</p>
+      <p class="act-kpi__meta">Aguardando revisão</p>
+    </article>
+    <article class="act-kpi">
+      <div class="act-kpi__icon act-kpi__icon--sky">✈</div>
+      <p class="act-kpi__label">Atividades para casa</p>
+      <p class="act-kpi__value">{{ st.homework_active }}</p>
+      <p class="act-kpi__meta">Em andamento</p>
+    </article>
+  </section>
+
+  {% if active_tab == 'tarefas' %}
+  <section class="act-card">
+    <div class="act-card__title-bar"><h2>Atividades publicadas</h2></div>
+    <div class="act-table-wrap">
+      <table class="act-table">
+        <thead>
+          <tr><th>Requisito</th><th>Seção</th><th>Classe</th><th>Prazo</th><th>Envios</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for hw in act.homework_rows %}
+          <tr>
+            <td><strong>{{ hw.title }}</strong></td>
+            <td><span style="font-size:0.72rem;color:#64748b">{{ hw.category }}</span></td>
+            <td><span class="act-pill act-pill--soft">{{ hw.class_name or hw.class_slug or '—' }}</span></td>
+            <td>{{ hw.due_label }}{% if hw.overdue %} <span class="act-status act-status--red">Atrasado</span>{% endif %}</td>
+            <td>{{ hw.submissions_count }} ({{ hw.approved_count }} ok)</td>
+            <td>{% if hw.active %}<span class="act-status act-status--green">Ativa</span>{% else %}<span class="act-status act-status--muted">Encerrada</span>{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="act-empty">Nenhuma tarefa. Use «Nova atividade para casa» e selecione um requisito oficial.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% elif active_tab == 'aprovacoes' %}
+  <div class="act-layout act-layout--single">
+    <section class="act-card act-card--pad">
+      <h2 class="act-section-title">Fila de aprovações</h2>
+      {% for item in act.pending_sidebar %}
+      <article class="act-review-row">
+        <div class="act-review-row__main">
+          <strong>{{ item.member_name }}</strong>
+          <p>{{ item.title }}</p>
+          <span class="act-evidence-badge">{{ item.evidence_type }}</span>
+          <span class="act-review-row__date">{{ item.ago }}</span>
+        </div>
+        <a href="{{ url_for('admin.admin_activities', tab='desbravadores', membro=item.member_id, **admin_nav_kw) }}" class="act-btn act-btn--sm act-btn--primary">Revisar</a>
+      </article>
+      {% else %}
+      <p class="act-empty">Nenhuma pendência.</p>
+      {% endfor %}
+    </section>
+  </div>
+
+  {% elif active_tab == 'relatorios' %}
+  <section class="act-card act-card--pad">
+    <h2 class="act-section-title">Relatórios do clube</h2>
+    <p class="act-lead">Progresso geral: <strong>{{ st.club_progress_pct }}%</strong> — {{ st.completed_total }} de {{ st.requirements_total }} requisitos.</p>
+    <div class="act-class-grid">
+      {% for cl in act.class_overview %}
+      <article class="act-class-card">
+        <div class="act-class-card__head">
+          <span class="act-class-card__icon" style="background:{{ cl.color_hex }}22">{{ cl.icon }}</span>
+          <div><strong>{{ cl.name }}</strong><p>{{ cl.member_count }} membros</p></div>
+        </div>
+        <div class="act-progress"><span style="width:{{ cl.progress_pct }}%;background:{{ cl.color_hex }}"></span></div>
+        <p class="act-class-card__pct" style="color:{{ cl.color_hex }}">{{ cl.progress_pct }}%</p>
+        <p class="act-class-card__sub">{{ cl.completed }} / {{ cl.total }} concluídas</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% elif show_catalog %}
+  <nav class="act-class-tabs" aria-label="Classes">
+    {% for ct in act.class_tabs %}
+    <a href="{{ url_for('admin.admin_activities', tab='desbravadores', catalogo=1, classe=ct.slug, membro=request.args.get('membro'), **admin_nav_kw) }}"
+       class="act-class-tab {% if act.active_class_slug == ct.slug %}is-active{% endif %}"
+       style="--act-class-color: {{ ct.color_hex }}">
+      <span class="act-class-tab__icon">{{ ct.icon }}</span>
+      <span class="act-class-tab__name">{{ ct.name }}</span>
+      <span class="act-class-tab__count">{{ ct.requirements_count }} requisitos</span>
+    </a>
+    {% endfor %}
+  </nav>
+  <div class="act-layout">
+    <div class="act-main">
+      {% set cv = act.class_view %}
+      {% include "admin/partials/activities_class_catalog.html" %}
+      {% if act.detail %}
+      <section class="act-detail" id="act-member-detail">
+        <h3 class="act-section-title">Caderno — {{ act.detail.member.full_name }}</h3>
+        {% set det = act.detail %}
+        {% for sec in det.sections %}
+        <details class="act-accordion__panel" open>
+          <summary class="act-accordion__head">
+            <span>{{ sec.code }}. {{ sec.title }}</span>
+            <span>{{ sec.done }}/{{ sec.total }}</span>
+            <div class="act-progress act-progress--inline"><span style="width:{{ sec.pct }}%"></span></div>
+          </summary>
+          {% for req in sec.requirements %}
+          <div class="act-req-row">
+            <span class="act-req-num">{{ req.number_label }}</span>
+            <div style="flex:1"><strong>{{ req.title }}</strong>
+              <span class="act-status act-status--{{ req.status_key }}">{{ req.status_label }}</span></div>
+            <form method="post" action="{{ url_for('admin.activities_requirement_status', progress_id=req.progress_id, **admin_nav_kw) }}" class="act-req-actions" data-act-req-form>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" name="status" value="completed" title="Concluir">✅</button>
+              <button type="submit" name="status" value="pending_review" title="Enviado">🔵</button>
+              <button type="submit" name="status" value="in_progress" title="Em andamento">🟡</button>
+            </form>
+          </div>
+          {% endfor %}
+        </details>
+        {% endfor %}
+      </section>
+      {% endif %}
+      <p class="act-back-link"><a href="{{ url_for('admin.admin_activities', tab='desbravadores', **admin_nav_kw) }}" class="act-btn act-btn--ghost">← Voltar à visão geral</a></p>
+    </div>
+    {% include "admin/partials/activities_sidebar.html" %}
+  </div>
+
+  {% else %}
+  {# —— Visão principal: tabela + sidebar (referência visual) —— #}
+  <nav class="act-class-tabs act-class-tabs--filter" aria-label="Filtrar por classe">
+    <a href="{{ url_for('admin.admin_activities', tab='desbravadores', **admin_nav_kw) }}"
+       class="act-class-tab {% if not request.args.get('filtro_classe') %}is-active{% endif %}">Todas</a>
+    {% for ct in act.class_tabs %}
+    <a href="{{ url_for('admin.admin_activities', tab='desbravadores', filtro_classe=ct.name, **admin_nav_kw) }}"
+       class="act-class-tab {% if request.args.get('filtro_classe') == ct.name %}is-active{% endif %}"
+       style="--act-class-color: {{ ct.color_hex }}">
+      <span class="act-class-tab__icon">{{ ct.icon }}</span>
+      <span class="act-class-tab__name">{{ ct.name }}</span>
+      <span class="act-class-tab__count">{{ ct.requirements_count }} req.</span>
+    </a>
+    {% endfor %}
+  </nav>
+
+  <div class="act-layout">
+    <div class="act-main">
+      <section class="act-card">
+        <form class="act-filters" method="get" action="{{ url_for('admin.admin_activities', **admin_nav_kw) }}">
+          <input type="hidden" name="tab" value="desbravadores" />
+          <div class="act-search-wrap">
+            <span class="act-search-icon" aria-hidden="true">🔍</span>
+            <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Buscar desbravador…" aria-label="Buscar" />
+          </div>
+          {% if request.args.get('filtro_classe') %}<input type="hidden" name="filtro_classe" value="{{ request.args.get('filtro_classe') }}" />{% endif %}
+          <select name="status" aria-label="Status">
+            <option value="">Todos os status</option>
+            <option value="in_progress" {% if request.args.get('status') == 'in_progress' %}selected{% endif %}>Em andamento</option>
+            <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Com pendências</option>
+            <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Concluídos</option>
+          </select>
+          <select name="sort" aria-label="Ordenar">
+            <option value="progress" {% if request.args.get('sort', 'progress') == 'progress' %}selected{% endif %}>Ordenar por progresso</option>
+            <option value="name" {% if request.args.get('sort') == 'name' %}selected{% endif %}>Nome</option>
+            <option value="pending" {% if request.args.get('sort') == 'pending' %}selected{% endif %}>Pendências</option>
+          </select>
+          <button type="submit" class="act-btn act-btn--primary act-btn--sm">Filtrar</button>
+        </form>
+
+        <div class="act-table-wrap">
+          <table class="act-table act-table--members">
+            <thead>
+              <tr>
+                <th>Desbravador</th>
+                <th>Classe</th>
+                <th>Progresso geral</th>
+                <th>Concluídas</th>
+                <th>Pendentes</th>
+                <th>Status</th>
+                <th aria-label="Ações"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in act.members %}
+              <tr>
+                <td>
+                  <div class="act-member">
+                    <div class="act-avatar" style="--act-avatar-ring: {{ row.class_color }}">
+                      {% if row.photo_url %}<img src="{{ row.photo_url }}" alt="" />{% else %}{{ row.initial }}{% endif %}
+                    </div>
+                    <div>
+                      <p class="act-member__name">{{ row.full_name }}</p>
+                      <p class="act-member__handle">{{ row.handle }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="act-pill" style="background:{{ row.class_color }}18;color:{{ row.class_color }};border:1px solid {{ row.class_color }}33">{{ row.class_name }}</span></td>
+                <td class="act-td-progress">
+                  <div class="act-progress-row">
+                    <div class="act-progress"><span style="width:{{ row.progress_percent }}%;background:{{ row.class_color }}"></span></div>
+                    <span class="act-progress-pct">{{ row.progress_percent }}%</span>
+                  </div>
+                </td>
+                <td><strong>{{ row.completed_count }}</strong> <span class="act-muted">/ {{ row.total_requirements }}</span></td>
+                <td><span class="act-pending-num">{{ row.pending_count }}</span></td>
+                <td>
+                  <span class="act-status act-status--{% if row.status_key == 'completed' %}green{% elif row.status_key == 'pending' %}blue{% elif row.status_key == 'in_progress' %}amber{% else %}muted{% endif %}">{{ row.status_label }}</span>
+                </td>
+                <td>
+                  <a href="{{ url_for('admin.admin_activities', tab='desbravadores', catalogo=1, classe=row.class_slug, membro=row.id, **admin_nav_kw) }}" class="act-icon-btn" title="Ver caderno">👁</a>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="7" class="act-empty">Nenhum desbravador encontrado.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="act-mobile-cards">
+          {% for row in act.members %}
+          <article class="act-mobile-card">
+            <div class="act-member">
+              <div class="act-avatar">{% if row.photo_url %}<img src="{{ row.photo_url }}" alt="" />{% else %}{{ row.initial }}{% endif %}</div>
+              <div>
+                <p class="act-member__name">{{ row.full_name }}</p>
+                <span class="act-pill" style="background:{{ row.class_color }}18;color:{{ row.class_color }}">{{ row.class_name }}</span>
+              </div>
+            </div>
+            <div class="act-progress" style="margin:0.5rem 0"><span style="width:{{ row.progress_percent }}%;background:{{ row.class_color }}"></span></div>
+            <p class="act-mobile-meta">{{ row.completed_count }}/{{ row.total_requirements }} · {{ row.status_label }}</p>
+            <a href="{{ url_for('admin.admin_activities', catalogo=1, membro=row.id, classe=row.class_slug, **admin_nav_kw) }}" class="act-btn act-btn--primary act-btn--sm act-btn--block">Ver caderno</a>
+          </article>
+          {% endfor %}
+        </div>
+
+        {% if act.total_pages > 1 %}
+        <nav class="act-pagination" aria-label="Páginas">
+          {% for p in range(1, act.total_pages + 1) %}
+          <a href="{{ url_for('admin.admin_activities', page=p, tab='desbravadores', q=request.args.get('q',''), filtro_classe=request.args.get('filtro_classe',''), status=request.args.get('status',''), sort=request.args.get('sort','progress'), **admin_nav_kw) }}" class="act-btn act-btn--sm {% if p == act.page %}act-btn--primary{% else %}act-btn--ghost{% endif %}">{{ p }}</a>
+          {% endfor %}
+        </nav>
+        {% endif %}
+
+        <div class="act-table-footer">
+          <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="act-btn act-btn--ghost act-btn--block">Ver todos os desbravadores</a>
+        </div>
+      </section>
+
+      <section aria-label="Progresso por classe" class="act-class-overview">
+        <h2 class="act-section-title">Progresso por classe</h2>
+        <div class="act-class-grid act-class-grid--compact">
+          {% for cl in act.class_overview %}
+          <article class="act-class-card act-class-card--compact">
+            <div class="act-class-card__head">
+              <span class="act-class-card__icon" style="background:{{ cl.color_hex }}22">{{ cl.icon }}</span>
+              <strong>{{ cl.name }}</strong>
+              <span class="act-class-card__pct" style="color:{{ cl.color_hex }}">{{ cl.progress_pct }}%</span>
+            </div>
+            <div class="act-progress"><span style="width:{{ cl.progress_pct }}%;background:{{ cl.color_hex }}"></span></div>
+            <p class="act-class-card__sub">{{ cl.completed }} / {{ cl.total }} concluídos</p>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    {% include "admin/partials/activities_sidebar.html" %}
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+{% if act and admin_scope_clube_id %}
+{% include "admin/partials/activities_homework_modal.html" %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/activities-premium.js') }}" defer></script>
+{% endblock %}

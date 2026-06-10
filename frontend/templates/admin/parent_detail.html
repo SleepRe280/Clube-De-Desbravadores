@@ -1,0 +1,157 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Responsável — {{ parent_user.full_name or parent_user.email }}{% endblock %}
+{% block content %}
+<a href="{{ url_for('admin.parents_list', **admin_nav_kw) }}" class="ui-link ui-link--subtle text-sm">← Lista de responsáveis</a>
+<h1 class="text-2xl font-bold mt-4">{{ parent_user.full_name or 'Sem nome' }}</h1>
+<p class="text-slate-600 text-sm mt-1">{{ parent_user.email }}</p>
+<p class="text-xs text-slate-400 mt-1">Conta criada em {{ parent_user.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+
+<div class="grid lg:grid-cols-2 gap-8 mt-8">
+  <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+    <h2 class="font-semibold text-lg border-b border-slate-100 pb-2">Desbravadores vinculados</h2>
+    {% if linked %}
+    <ul class="mt-4 space-y-4">
+      {% for m in linked %}
+      <li class="border border-slate-100 rounded-lg px-3 py-3 text-sm">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="font-medium text-slate-900">{{ m.full_name }}</p>
+            {% if m.unit %}<p class="text-xs text-slate-500 mt-0.5">{{ m.unit }}</p>{% endif %}
+          </div>
+          {% if admin_panel.can_manage_member_links %}
+          <form method="post" class="shrink-0" onsubmit="return confirm('Remover vínculo deste desbravador?');">
+            {% if admin_scope_clube_id %}
+            <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+            {% endif %}
+            <input type="hidden" name="action" value="unlink" />
+            <input type="hidden" name="member_id" value="{{ m.id }}" />
+            <button type="submit" class="ui-btn ui-btn--sm ui-btn--text-danger">Desvincular</button>
+          </form>
+          {% endif %}
+        </div>
+
+        {% if admin_panel.can_manage_member_links %}
+        <div class="mt-3 pt-3 border-t border-slate-100 space-y-3">
+          <form method="post" class="flex flex-wrap items-end gap-2">
+            {% if admin_scope_clube_id %}
+            <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+            {% endif %}
+            <input type="hidden" name="action" value="change_type" />
+            <input type="hidden" name="member_id" value="{{ m.id }}" />
+            <div class="flex-1 min-w-[10rem]">
+              <label class="block text-xs text-slate-500 mb-1">Tipo de vínculo</label>
+              <select name="link_type" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-sm">
+                {% for code, label in link_types|default([]) %}
+                <option value="{{ code }}" {% if m.parent_link_type == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="ui-btn ui-btn--sm ui-btn--outline">Atualizar tipo</button>
+          </form>
+
+          {% if other_parents %}
+          <form method="post" class="flex flex-wrap items-end gap-2" onsubmit="return confirm('Transferir este desbravador para outro responsável?');">
+            {% if admin_scope_clube_id %}
+            <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+            {% endif %}
+            <input type="hidden" name="action" value="transfer" />
+            <input type="hidden" name="member_id" value="{{ m.id }}" />
+            <div class="flex-1 min-w-[10rem]">
+              <label class="block text-xs text-slate-500 mb-1">Transferir para</label>
+              <select name="new_parent_id" required class="w-full rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-sm">
+                <option value="">Selecione o novo responsável…</option>
+                {% for op in other_parents %}
+                <option value="{{ op.id }}">{{ op.full_name or op.email }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="min-w-[8rem]">
+              <label class="block text-xs text-slate-500 mb-1">Novo tipo</label>
+              <select name="link_type" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 bg-white text-sm">
+                {% for code, label in link_types|default([]) %}
+                <option value="{{ code }}" {% if m.parent_link_type == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="ui-btn ui-btn--sm ui-btn--info">Transferir</button>
+          </form>
+          {% endif %}
+        </div>
+        {% elif m.parent_link_type %}
+        <p class="text-xs text-slate-500 mt-2">{{ link_type_labels.get(m.parent_link_type, m.parent_link_type) }}</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-slate-500 text-sm mt-4">Nenhum desbravador vinculado ainda.</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+    <h2 class="font-semibold text-lg border-b border-slate-100 pb-2">Vincular desbravador</h2>
+    <p class="text-slate-600 text-sm mt-3">
+      Lista desbravadores <strong>cadastrados no clube</strong> e ainda <strong>sem responsável</strong>.
+      Após vincular, o responsável entra em <strong>/pais/</strong> com o e-mail desta conta.
+    </p>
+    {% if not is_parent_account %}
+    <p class="text-amber-800 text-sm mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+      Esta conta não é de responsável cadastrado pelo site. Vínculos só funcionam com contas criadas em «Criar conta».
+    </p>
+    {% endif %}
+    {% if admin_panel.can_manage_member_links %}
+      {% if unlinked %}
+        <form method="post" class="mt-4 space-y-3">
+          {% if admin_scope_clube_id %}
+          <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+          {% endif %}
+          <input type="hidden" name="action" value="link" />
+          <div>
+            <label class="block text-sm text-slate-600 mb-1">Desbravador</label>
+            <select name="member_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white">
+              <option value="">Selecione…</option>
+              {% for m in unlinked %}
+              <option value="{{ m.id }}">{{ m.full_name }}{% if m.unit %} — {{ m.unit }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-600 mb-1">Tipo de vínculo</label>
+            <select name="link_type" class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-white">
+              {% for code, label in link_types|default([]) %}
+              <option value="{{ code }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="ui-btn ui-btn--info">Vincular — aparece no portal /pais/</button>
+        </form>
+      {% else %}
+        <p class="text-amber-700 text-sm mt-4">Todos os desbravadores já têm responsável ou não há membros cadastrados.</p>
+      {% endif %}
+    {% else %}
+      <p class="text-sm text-slate-600 mt-4">Seu cargo não permite gerenciar vínculos.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if admin_panel.can_delete_parent_accounts %}
+<section class="mt-10 max-w-2xl rounded-xl border border-red-200 bg-red-50/40 p-6">
+  <h2 class="font-semibold text-red-900 border-b border-red-100 pb-2">Excluir conta do responsável</h2>
+  <p class="text-sm text-slate-700 mt-3">
+    Remove o login deste responsável do sistema. Os desbravadores cadastrados <strong>não são apagados</strong>; apenas ficam
+    <strong>sem responsável vinculado</strong> até a diretoria associar outra conta.
+  </p>
+  <form
+    method="post"
+    action="{{ url_for('admin.parent_delete', user_id=parent_user.id) }}"
+    class="mt-4"
+    onsubmit="return confirm('Excluir permanentemente esta conta de responsável? Esta ação não pode ser desfeita.');"
+  >
+    {% if admin_scope_clube_id %}
+    <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+    {% endif %}
+    <button type="submit" class="ui-btn ui-btn--danger-soft">Excluir conta do responsável</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

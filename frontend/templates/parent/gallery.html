@@ -1,0 +1,28 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Galeria{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-extrabold text-navy-900 mb-2">Galeria de fotos</h2>
+<p class="text-slate-600 text-sm mb-6">Memórias visuais do clube</p>
+
+{% if portal_child %}
+<section class="pp-card p-4 mb-6 border-l-4 border-gold-400">
+  <p class="font-semibold text-navy-900">📸 Fotos do clube</p>
+  <p class="text-sm text-slate-600 mt-1">Imagens publicadas nos comunicados e notícias — em breve: filtro “onde {{ portal_child.full_name.split()[0] }} aparece”.</p>
+</section>
+{% endif %}
+
+{% if gallery_images %}
+<div class="pp-gallery">
+  {% for img in gallery_images %}
+  <figure class="group relative">
+    <img src="{{ url_for('uploaded_file', rel_path=img.src) }}" alt="{{ img.title }}" loading="lazy" />
+    <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 text-white text-xs rounded-b-xl opacity-0 group-hover:opacity-100 transition">
+      {{ img.title }}
+    </figcaption>
+  </figure>
+  {% endfor %}
+</div>
+{% else %}
+<p class="pp-card p-8 text-center text-slate-600">Ainda não há fotos publicadas pelo clube.</p>
+{% endif %}
+{% endblock %}

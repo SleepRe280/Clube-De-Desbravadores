@@ -1,0 +1,310 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Presenças{% endblock %}
+{% block header_sub %}Gestão inteligente de frequência — chamada rápida e indicadores do clube{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/attendance-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div id="att-app" class="att-page ap-animate-in">
+  <header class="att-page-head">
+    <div>
+      <h1>Presenças</h1>
+      <p>Registro de chamada, indicadores e histórico de reuniões — tudo em um painel premium.</p>
+    </div>
+    <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="text-sm font-semibold text-blue-700 hover:underline">Desbravadores →</a>
+  </header>
+
+  <details class="att-example">
+    <summary>📐 Referência visual do layout (exemplo)</summary>
+    <img src="{{ url_for('static', filename='img/attendance-dashboard-example.png') }}" alt="Exemplo do painel de presenças — métricas, lista de chamada, calendário e alertas" width="1200" height="675" loading="lazy" />
+  </details>
+
+  {% if admin_needs_clube_scope and not admin_scope_clube_id %}
+  <div class="att-scope-empty">
+    <p style="margin:0;font-weight:700;color:#0d1b3e">Selecione um clube</p>
+    <p style="margin:0.5rem 0 0;font-size:0.88rem;color:#64748b">Use o seletor no topo do painel para gerenciar presenças.</p>
+  </div>
+  {% elif not att %}
+  <div class="att-scope-empty">
+    <p style="margin:0;color:#64748b">Nenhum dado disponível.</p>
+  </div>
+  {% else %}
+
+  <section class="att-kpi-row" aria-label="Indicadores de presença">
+    <article class="att-kpi">
+      <div class="att-kpi__icon att-kpi__icon--slate">👥</div>
+      <p class="att-kpi__label">Total de membros</p>
+      <p class="att-kpi__value">{{ att.n_members }}</p>
+      <p class="att-kpi__meta">Ativos no clube</p>
+    </article>
+    <article class="att-kpi">
+      <div class="att-kpi__icon att-kpi__icon--green">✓</div>
+      <p class="att-kpi__label">Presentes hoje</p>
+      <p class="att-kpi__value">{{ att.present_today }}</p>
+      <p class="att-kpi__meta att-kpi__meta--up">{{ att.present_today_pct }}% do total</p>
+    </article>
+    <article class="att-kpi">
+      <div class="att-kpi__icon att-kpi__icon--red">✕</div>
+      <p class="att-kpi__label">Faltas neste mês</p>
+      <p class="att-kpi__value">{{ att.month_absences }}</p>
+      <p class="att-kpi__meta att-kpi__meta--down">Registros de falta</p>
+    </article>
+    <article class="att-kpi">
+      <div class="att-kpi__icon att-kpi__icon--blue">📈</div>
+      <p class="att-kpi__label">Taxa média (30 dias)</p>
+      <p class="att-kpi__value">{{ att.avg_rate_30d }}%</p>
+      <div class="att-sparkline" aria-hidden="true">
+        {% for h in att.sparkline %}
+        <span style="height:{{ h if h > 8 else 8 }}%"></span>
+        {% endfor %}
+      </div>
+    </article>
+    <article class="att-kpi">
+      <div class="att-kpi__icon att-kpi__icon--amber">📅</div>
+      <p class="att-kpi__label">Última reunião</p>
+      <p class="att-kpi__value" style="font-size:clamp(0.95rem,2vw,1.25rem)">{{ att.last_meeting_label }}</p>
+      <p class="att-kpi__meta">{{ att.meeting_title }}</p>
+    </article>
+  </section>
+
+  <div class="att-layout">
+    <div class="att-main">
+      <form id="att-roll-form" method="post" class="att-card">
+        {% if admin_scope_clube_id %}
+        <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+        {% endif %}
+        <input type="hidden" name="meeting_date" value="{{ att.meeting_date_iso }}" />
+
+        <div class="att-card__head">
+          <h2>Registro de presença — {{ att.meeting_title }}</h2>
+          <div class="att-card__meta">
+            <span>📅 <strong>Data</strong>
+              <input type="date" id="att-meeting-date" class="att-meeting-date-input" value="{{ att.meeting_date_iso }}" aria-label="Data da reunião" />
+            </span>
+            <span>🕐 <strong>Horário</strong> {{ att.meeting_time }}</span>
+            <span>📍 <strong>Local</strong> {{ att.meeting_location }}</span>
+          </div>
+        </div>
+
+        <div class="att-toolbar">
+          <div class="att-tabs" role="tablist">
+            <button type="button" class="att-tab is-active" data-filter="all">Todos ({{ att.tab_counts.all }})</button>
+            <button type="button" class="att-tab" data-filter="presente">Presentes ({{ att.tab_counts.presente }})</button>
+            <button type="button" class="att-tab" data-filter="falta">Faltas ({{ att.tab_counts.falta }})</button>
+            <button type="button" class="att-tab" data-filter="atrasado">Atrasos ({{ att.tab_counts.atrasado }})</button>
+            <button type="button" class="att-tab" data-filter="justificado">Justificados ({{ att.tab_counts.justificado }})</button>
+          </div>
+          <label class="att-search">
+            <span class="sr-only">Buscar membro</span>
+            <input type="search" id="att-search" placeholder="Buscar membro…" autocomplete="off" />
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </label>
+        </div>
+
+        <div class="att-table-wrap">
+          <table class="att-table">
+            <thead>
+              <tr>
+                <th scope="col">Membro</th>
+                <th scope="col">Unidade</th>
+                <th scope="col">Status</th>
+                <th scope="col">Observação</th>
+                <th scope="col"><span class="sr-only">Ação</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in att.roll_call %}
+              <tr
+                data-att-row
+                data-status="{{ row.status }}"
+                data-search="{{ row.name|lower }} {{ row.unit|lower }} {{ row.reg_code }}"
+              >
+                <td>
+                  <div class="att-member">
+                    <div class="att-avatar">
+                      {% if row.photo_url %}
+                      <img src="{{ row.photo_url }}" alt="" />
+                      {% else %}
+                      {{ row.initial }}
+                      {% endif %}
+                    </div>
+                    <div>
+                      <div class="att-member__name">{{ row.name }}</div>
+                      <div class="att-member__code">{{ row.reg_code }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="att-unit">{{ row.unit }}</span></td>
+                <td>
+                  <input type="hidden" name="status_{{ row.member_id }}" value="{{ row.status }}" />
+                  <button
+                    type="button"
+                    class="att-badge att-badge--{{ row.status }}"
+                    data-att-status-btn
+                    data-member-id="{{ row.member_id }}"
+                    data-status="{{ row.status }}"
+                  >{{ row.status_label }}</button>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="att-note-input"
+                    name="note_{{ row.member_id }}"
+                    value="{{ row.note }}"
+                    placeholder="—"
+                    maxlength="200"
+                  />
+                </td>
+                <td>
+                  <button type="button" class="att-row-action" data-att-cycle title="Alternar status" aria-label="Alternar status de {{ row.name }}">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  </button>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="5" style="text-align:center;padding:2rem;color:#64748b">Nenhum membro cadastrado.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="att-card__foot">
+          <button type="button" class="att-btn att-btn--ghost" id="att-mark-all">Marcar todos como presentes</button>
+          <p class="att-summary">
+            {{ att.tab_counts.presente }} presentes · {{ att.tab_counts.falta }} faltas · {{ att.tab_counts.atrasado }} atrasos
+          </p>
+          <button type="submit" class="att-btn att-btn--navy">Salvar presença</button>
+        </div>
+      </form>
+    </div>
+
+    <aside class="att-sidebar" aria-label="Painel lateral">
+      <div class="att-widget">
+        <h3>Calendário de presença</h3>
+        <div class="att-cal-nav">
+          <a href="{{ url_for('admin.attendance_overview', cal_month=att.calendar_prev_iso, meeting_date=att.meeting_date_iso, **admin_nav_kw) }}" aria-label="Mês anterior">‹</a>
+          <span>{{ att.calendar_month_label }}</span>
+          <a href="{{ url_for('admin.attendance_overview', cal_month=att.calendar_next_iso, meeting_date=att.meeting_date_iso, **admin_nav_kw) }}" aria-label="Próximo mês">›</a>
+        </div>
+        <div class="att-cal-grid">
+          <span class="att-cal-dow">D</span><span class="att-cal-dow">S</span><span class="att-cal-dow">T</span>
+          <span class="att-cal-dow">Q</span><span class="att-cal-dow">Q</span><span class="att-cal-dow">S</span><span class="att-cal-dow">S</span>
+          {% for week in att.calendar_weeks %}
+            {% for day in week %}
+              {% if day %}
+              <a
+                href="{{ url_for('admin.attendance_overview', meeting_date=day.date, cal_month=att.calendar_month_iso, **admin_nav_kw) }}"
+                class="att-cal-day att-cal-day--{% if day.tone == 'good' %}good{% elif day.tone == 'bad' %}bad{% elif day.tone == 'warn' %}warn{% elif day.tone == 'info' %}info{% else %}empty-day{% endif %}{% if day.date == att.meeting_date_iso %} is-today{% endif %}"
+                title="{{ day.date }}"
+              >{{ day.day }}</a>
+              {% else %}
+              <span class="att-cal-day is-empty" aria-hidden="true"></span>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </div>
+        <div class="att-cal-legend">
+          <span><i style="background:#d1fae5"></i> Boa presença</span>
+          <span><i style="background:#fee2e2"></i> Muitas faltas</span>
+          <span><i style="background:#fef3c7"></i> Atrasos</span>
+          <span><i style="background:#dbeafe"></i> Justificados</span>
+        </div>
+      </div>
+
+      <div class="att-widget">
+        <h3>Alertas e destaques</h3>
+        <div class="att-alerts">
+          {% for alert in att.alerts %}
+          <div class="att-alert att-alert--{{ alert.tone }}">
+            {{ alert.title }}
+            <button type="button" data-att-alert-filter="{% if alert.filter == 'low_rate' %}falta{% elif alert.filter == 'perfect' %}presente{% elif alert.filter == 'stale' %}all{% else %}falta{% endif %}">Ver membros →</button>
+          </div>
+          {% else %}
+          <p style="margin:0;font-size:0.78rem;color:#64748b">Nenhum alerta no momento. Continue o bom trabalho!</p>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="att-bottom" aria-label="Histórico e ranking">
+    <div class="att-widget">
+      <h3>Histórico de reuniões</h3>
+      <div class="att-table-wrap">
+        <table class="att-history-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Reunião</th>
+              <th>Presentes</th>
+              <th>Faltas</th>
+              <th>Atrasos</th>
+              <th>Justif.</th>
+              <th>Taxa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in att.meeting_history %}
+            <tr>
+              <td>
+                <a href="{{ url_for('admin.attendance_overview', meeting_date=h.date.isoformat(), **admin_nav_kw) }}" class="font-semibold text-blue-700 hover:underline">
+                  {{ h.date_label }}
+                </a>
+              </td>
+              <td>{{ h.title }}</td>
+              <td>{{ h.present }}</td>
+              <td>{{ h.absent }}</td>
+              <td>{{ h.late }}</td>
+              <td>{{ h.justified }}</td>
+              <td>
+                <div class="att-rate-bar">
+                  <div class="att-rate-bar__track"><div class="att-rate-bar__fill" style="width:{{ h.rate }}%"></div></div>
+                  <span>{{ h.rate }}%</span>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:1rem">Sem reuniões registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="att-widget">
+      <h3>Top presença do mês</h3>
+      <ol class="att-ranking">
+        {% for r in att.ranking %}
+        <li>
+          <span class="att-ranking__pos">{{ loop.index }}º</span>
+          <div class="att-avatar" style="width:2rem;height:2rem;font-size:0.75rem">
+            {% if r.photo %}
+            <img src="{{ url_for('uploaded_file', rel_path=r.photo) }}" alt="" />
+            {% else %}
+            {{ r.name[0]|upper }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="att-member__name" style="font-size:0.82rem">{{ r.name }}</div>
+            <div class="att-member__code">{{ r.unit }}</div>
+          </div>
+          <span class="att-ranking__rate">{{ r.rate }}%</span>
+        </li>
+        {% else %}
+        <li style="color:#94a3b8;font-size:0.8rem">Sem dados suficientes neste mês.</li>
+        {% endfor %}
+      </ol>
+    </div>
+  </section>
+
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/attendance-premium.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,26 @@
+/**
+ * Folha principal — ordem: tokens → layout → components
+ * Incluir no HTML após reset/base se necessário.
+ */
+@import url("tokens.css");
+@import url("layout.css");
+@import url("components.css");
+@import url("admin-dashboard.css");
+@import url("motion.css");
+@import url("parent-portal.css");
+@import url("admin-portal.css");
+@import url("responsive-shell.css");
+@import url("member-profile.css");
+
+/* Ajustes globais leves */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}

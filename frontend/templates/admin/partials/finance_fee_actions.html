@@ -1,0 +1,15 @@
+{# Paga: confirma recebimento e credita o caixa. Excluir: remove a cobrança. #}
+{% if can_write_finance %}
+<div class="fn-fee-actions" role="group" aria-label="Ações da cobrança">
+  {% if f.status in ['pendente', 'atrasado'] %}
+  <form method="post" action="{{ url_for('admin.finance_fee_mark_paid', fid=f.id) }}" class="fn-fee-actions__form" onsubmit="return confirm('Confirmar que o pagamento foi recebido? O valor será somado ao caixa do clube.');">
+    {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+    <button type="submit" class="fn-mini-btn fn-mini-btn--ok">Paga</button>
+  </form>
+  {% endif %}
+  <form method="post" action="{{ url_for('admin.finance_fee_delete', fid=f.id) }}" class="fn-fee-actions__form" onsubmit="return confirm('Excluir esta cobrança? Esta ação não pode ser desfeita.');">
+    {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+    <button type="submit" class="fn-mini-btn fn-mini-btn--no">Excluir</button>
+  </form>
+</div>
+{% endif %}

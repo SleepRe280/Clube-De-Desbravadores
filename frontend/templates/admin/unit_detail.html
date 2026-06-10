@@ -1,0 +1,268 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if ud %}{{ ud.unit.name }}{% else %}Unidade{% endif %}{% endblock %}
+{% block header_sub %}Membros, cargos e informações da unidade{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/units-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div id="un-app" class="un-page ap-animate-in">
+  {% if admin_needs_clube_scope and not admin_scope_clube_id %}
+  <div class="un-scope-empty">
+    <p style="margin:0;font-weight:700">Selecione um clube no topo do painel.</p>
+  </div>
+  {% elif not ud %}
+  <div class="un-scope-empty"><p>Unidade não encontrada.</p></div>
+  {% else %}
+  <nav class="un-breadcrumb">
+    <a href="{{ url_for('admin.admin_units', **admin_nav_kw) }}">Unidades</a>
+    <span>›</span>
+    <strong>{{ ud.unit.name }}</strong>
+  </nav>
+
+  <section class="un-hero" data-theme="{{ ud.unit.theme_color }}">
+    <div class="un-hero__top">
+      <div class="un-hero__logo">
+        {% if ud.unit.logo_url %}<img src="{{ ud.unit.logo_url }}" alt="" />{% else %}{{ ud.unit.initials }}{% endif %}
+      </div>
+      <div class="un-hero__info">
+        <h2>{{ ud.unit.name }}</h2>
+        <span class="un-badge un-badge--ativa">{{ ud.unit.status_label }}</span>
+        {% if ud.unit.description %}<p class="un-hero__meta">{{ ud.unit.description }}</p>{% endif %}
+      </div>
+      <div class="un-hero__actions">
+        <a href="{{ ud.unit.edit_url }}" class="un-btn un-btn--primary">Editar unidade</a>
+      </div>
+    </div>
+    <div class="un-hero__stats">
+      <div class="un-hero__stat">
+        <span>👥</span>
+        <div><strong>{{ ud.unit.member_count }}</strong> Membros</div>
+      </div>
+      <div class="un-hero__stat">
+        <span>📅</span>
+        <div><strong>{{ ud.unit.founded_at }}</strong> Fundada em</div>
+      </div>
+      <div class="un-hero__stat">
+        <span>🎓</span>
+        <div><strong>{{ ud.unit.counselor }}</strong> Conselheira</div>
+      </div>
+    </div>
+    <nav class="un-tabs" aria-label="Abas da unidade">
+      <a href="{{ url_for('admin.admin_unit_detail', unit_id=ud.unit.id, tab='membros', **admin_nav_kw) }}" class="un-tab {% if active_tab != 'cargos' and active_tab != 'info' %}is-active{% endif %}">Membros</a>
+      <a href="{{ url_for('admin.admin_unit_detail', unit_id=ud.unit.id, tab='cargos', **admin_nav_kw) }}" class="un-tab {% if active_tab == 'cargos' %}is-active{% endif %}">Cargos</a>
+      <a href="{{ url_for('admin.admin_unit_detail', unit_id=ud.unit.id, tab='info', **admin_nav_kw) }}" class="un-tab {% if active_tab == 'info' %}is-active{% endif %}">Informações</a>
+    </nav>
+  </section>
+
+  {% if active_tab == 'cargos' %}
+  <div class="un-detail-layout">
+    <section class="un-panel">
+      <div class="un-panel__head">
+        <h3>Cargos da unidade</h3>
+        <button type="button" class="un-btn un-btn--primary un-btn--sm" id="un-btn-new-role">+ Novo cargo</button>
+      </div>
+      <ul class="un-role-list">
+        {% for role in ud.roles %}
+        <li class="un-role-item">
+          <span style="display:flex;align-items:center;gap:0.5rem">
+            <span class="un-role-dot un-role-dot--{{ role.color_key }}"></span>
+            <strong>{{ role.name }}</strong>
+            <span style="color:#94a3b8;font-size:0.8rem">({{ role.count }})</span>
+          </span>
+          <span class="un-actions-cell">
+            <button type="button" class="un-btn un-btn--icon un-btn--ghost" data-un-edit-role="{{ role.id }}" data-role-name="{{ role.name }}" data-role-color="{{ role.color_key }}" title="Editar">✎</button>
+            <form method="post" action="{{ url_for('admin.admin_unit_role_delete', unit_id=ud.unit.id, role_id=role.id, **admin_nav_kw) }}" style="display:inline" onsubmit="return confirm('Excluir o cargo «{{ role.name }}»? Membros serão movidos para «Membro» quando possível.');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="un-btn un-btn--icon un-btn--ghost" title="Excluir">🗑</button>
+            </form>
+          </span>
+        </li>
+        {% else %}
+        <li style="padding:1.5rem;text-align:center;color:#64748b">Nenhum cargo cadastrado.</li>
+        {% endfor %}
+      </ul>
+    </section>
+    <aside class="un-widget">
+      <div class="un-widget__head">Ações</div>
+      <div class="un-danger-zone">
+        <a href="{{ ud.unit.edit_url }}">Editar informações da unidade →</a>
+      </div>
+    </aside>
+  </div>
+
+  {% elif active_tab == 'info' %}
+  <section class="un-panel" style="padding:1.25rem">
+    <dl style="display:grid;grid-template-columns:auto 1fr;gap:0.5rem 1.5rem;font-size:0.9rem;margin:0">
+      <dt style="color:#64748b;font-weight:600">Nome</dt><dd style="margin:0;font-weight:700">{{ ud.unit.name }}</dd>
+      <dt style="color:#64748b;font-weight:600">Tipo</dt><dd style="margin:0">{{ ud.unit.unit_type or '—' }}</dd>
+      <dt style="color:#64748b;font-weight:600">Status</dt><dd style="margin:0">{{ ud.unit.status_label }}</dd>
+      <dt style="color:#64748b;font-weight:600">Frequência (mês)</dt><dd style="margin:0">{{ ud.unit.attendance_pct }}%</dd>
+      <dt style="color:#64748b;font-weight:600">Fundada em</dt><dd style="margin:0">{{ ud.unit.founded_at }}</dd>
+    </dl>
+    <p style="margin-top:1.25rem"><a href="{{ ud.unit.edit_url }}" class="un-btn un-btn--primary">Editar unidade</a></p>
+  </section>
+
+  {% else %}
+  <div class="un-detail-layout">
+    <section class="un-panel">
+      <div class="un-panel__head">
+        <h3>Membros da unidade</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
+          <div class="un-search" style="min-width:160px;flex:0 1 200px">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="search" id="un-member-search" placeholder="Buscar membro…" />
+          </div>
+          <select class="un-select" id="un-role-filter" style="padding:0.45rem 0.75rem">
+            <option value="">Todos os cargos</option>
+            {% for role in ud.roles %}
+            <option value="{{ role.name }}">{{ role.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="un-btn un-btn--primary un-btn--sm" id="un-btn-add-member">+ Adicionar membro</button>
+        </div>
+      </div>
+      <div class="un-table-wrap">
+        <table class="un-table" id="un-members-table">
+          <thead>
+            <tr>
+              <th style="width:2rem"></th>
+              <th>Membro</th>
+              <th>Cargo</th>
+              <th>Data de entrada</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in ud.members %}
+            <tr data-name="{{ m.full_name|lower }}" data-role="{{ m.role_label }}">
+              <td style="color:#cbd5e1">⋮⋮</td>
+              <td>
+                <div class="un-member-cell">
+                  <span class="un-avatar">
+                    {% if m.photo_url %}<img src="{{ m.photo_url }}" alt="" />{% else %}{{ m.initial }}{% endif %}
+                  </span>
+                  <strong>{{ m.full_name }}</strong>
+                </div>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('admin.admin_unit_member_role', unit_id=ud.unit.id, member_id=m.id, **admin_nav_kw) }}" class="un-role-form" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <select name="role_name" class="un-select" style="padding:0.35rem 0.5rem;font-size:0.78rem;min-width:140px" onchange="this.form.submit()">
+                    {% for opt in ud.role_options %}
+                    <option value="{{ opt.name }}" {% if opt.name == m.role_label %}selected{% endif %}>{{ opt.name }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              </td>
+              <td>{{ m.joined_at }}</td>
+              <td>
+                <div class="un-actions-cell">
+                  <a href="{{ m.edit_url }}" class="un-btn un-btn--icon un-btn--ghost" title="Editar ficha">✎</a>
+                  <form method="post" action="{{ url_for('admin.admin_unit_member_remove', unit_id=ud.unit.id, member_id=m.id, **admin_nav_kw) }}" style="display:inline" onsubmit="return confirm('Remover {{ m.full_name }} desta unidade?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="un-btn un-btn--icon un-btn--ghost" title="Remover">🗑</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center;padding:2rem;color:#64748b">Nenhum membro nesta unidade.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <aside>
+      <div class="un-widget">
+        <div class="un-widget__head">Gerenciar cargos</div>
+        <ul class="un-role-list">
+          {% for role in ud.roles %}
+          <li class="un-role-item">
+            <span style="display:flex;align-items:center;gap:0.5rem">
+              <span class="un-role-dot un-role-dot--{{ role.color_key }}"></span>
+              {{ role.name }}: <strong>{{ role.count }}</strong>
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+        <div style="padding:0.75rem 1rem">
+          <button type="button" class="un-btn un-btn--ghost un-btn--sm" style="width:100%" id="un-btn-new-role-side">+ Novo cargo</button>
+        </div>
+      </div>
+      <div class="un-widget">
+        <div class="un-widget__head">Ações da unidade</div>
+        <div class="un-danger-zone">
+          <a href="{{ ud.unit.edit_url }}">Editar informações da unidade →</a>
+          <a href="{{ ud.unit.edit_url }}#un-danger" class="un-danger-delete">
+            <span>Excluir unidade</span>
+            <small>Esta ação não pode ser desfeita.</small>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+  {% endif %}
+
+  <div id="un-modal-role" class="un-modal" aria-hidden="true">
+    <div class="un-modal__box">
+      <h3 id="un-modal-role-title">Novo cargo</h3>
+      <form method="post" id="un-role-form" action="{{ url_for('admin.admin_unit_role_create', unit_id=ud.unit.id, **admin_nav_kw) }}" data-create-url="{{ url_for('admin.admin_unit_role_create', unit_id=ud.unit.id, **admin_nav_kw) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="return_tab" value="{{ active_tab }}" />
+        <div class="un-form" style="margin-top:0.5rem">
+          <label>Nome do cargo</label>
+          <input name="name" required placeholder="Ex.: Capitã" />
+          <label style="margin-top:0.75rem">Cor do badge</label>
+          <select name="color_key">
+            <option value="purple">Roxo</option>
+            <option value="blue">Azul</option>
+            <option value="mint">Verde menta</option>
+            <option value="amber">Âmbar</option>
+            <option value="pink">Rosa</option>
+            <option value="teal">Teal</option>
+            <option value="gray">Cinza</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:1.25rem;justify-content:flex-end">
+          <button type="button" class="un-btn un-btn--ghost" data-un-close-modal>Cancelar</button>
+          <button type="submit" class="un-btn un-btn--primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="un-modal-member" class="un-modal" aria-hidden="true">
+    <div class="un-modal__box">
+      <h3>Adicionar membro</h3>
+      <form method="post" action="{{ url_for('admin.admin_unit_member_add', unit_id=ud.unit.id, **admin_nav_kw) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="un-form">
+          <label>Desbravador</label>
+          <select name="member_id" required>
+            <option value="">Selecione…</option>
+            {% for am in ud.available_members %}
+            <option value="{{ am.id }}">{{ am.full_name }}</option>
+            {% endfor %}
+          </select>
+          <label style="margin-top:0.75rem">Cargo</label>
+          <select name="role_name">
+            <option value="">Membro (padrão)</option>
+            {% for opt in ud.role_options %}
+            <option value="{{ opt.name }}">{{ opt.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:1.25rem;justify-content:flex-end">
+          <button type="button" class="un-btn un-btn--ghost" data-un-close-modal>Cancelar</button>
+          <button type="submit" class="un-btn un-btn--primary">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<script src="{{ url_for('static', filename='js/units-premium.js') }}" defer></script>
+{% endblock %}

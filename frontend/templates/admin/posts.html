@@ -1,0 +1,41 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Comunicação{% endblock %}
+{% block header_sub %}Avisos e notícias para as famílias{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between flex-wrap gap-4 ap-page-head ap-animate-in">
+  <h1>Comunicação</h1>
+  <a href="{{ url_for('admin.post_new', **admin_nav_kw) }}" class="ui-btn ui-btn--brand">Nova publicação</a>
+</div>
+<p class="text-slate-600 text-sm mt-2">Comunicados e notícias em um único mural. Os responsáveis veem tudo no portal família.</p>
+{% set level_map = dict(levels) %}
+<ul class="mt-6 space-y-3">
+  {% for p in posts %}
+  <li class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <div class="min-w-0 flex-1">
+      <div class="flex flex-wrap items-center gap-2 mb-2">
+        {% if p.post_kind == 'noticia' %}
+        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">Notícia</span>
+        <span class="text-[10px] font-medium text-slate-500">{{ level_map.get(p.level, p.level or '—') }}</span>
+        {% else %}
+        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">Comunicado</span>
+        {% endif %}
+      </div>
+      <h2 class="font-semibold text-lg text-slate-900">{{ p.title }}</h2>
+      <p class="text-xs text-slate-400 mt-1">{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+      <p class="text-slate-700 text-sm mt-3 whitespace-pre-line line-clamp-4">{{ p.body }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <a href="{{ url_for('admin.post_edit', pid=p.id, **admin_nav_kw) }}" class="ui-btn ui-btn--outline ui-btn--sm">Editar</a>
+      <form method="post" action="{{ url_for('admin.post_delete', post_id=p.id) }}" onsubmit="return confirm('Excluir esta publicação?');">
+        {% if admin_scope_clube_id %}
+        <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+        {% endif %}
+        <button type="submit" class="ui-btn ui-btn--danger-soft ui-btn--sm">Excluir</button>
+      </form>
+    </div>
+  </li>
+  {% else %}
+  <li class="text-slate-500">Nenhuma publicação ainda.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

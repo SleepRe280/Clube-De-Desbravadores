@@ -1,0 +1,220 @@
+{% set _admin_panel_fb = {
+  'show_finance_nav': false,
+  'can_view_finance': false,
+  'can_write_finance': false,
+  'can_view_warehouse': false,
+  'can_write_warehouse': false,
+  'show_directorate_nav': false,
+  'can_manage_directorate_ui': false,
+  'can_delegate_roles': false,
+  'can_write_agenda': false,
+  'can_manage_member_links': false,
+  'can_add_members': false,
+  'can_delete_members': false,
+  'can_delete_parent_accounts': false,
+} %}
+{% set admin_panel = admin_panel | default(_admin_panel_fb, true) %}
+{% set nav = admin_nav|default({
+  'dashboard': '/admin/', 'members': '/admin/membros', 'units': '/admin/unidades',
+  'events': '/admin/agenda', 'activities': '/admin/atividades', 'specialties': '/admin/especialidades',
+  'communications': '/admin/publicacoes', 'finance': '/admin/financeiro', 'warehouse': '/admin/almoxarifado',
+  'gallery': '/admin/galeria', 'settings': '/admin/configuracoes', 'parents': '/admin/responsaveis',
+  'attendance': '/admin/presencas', 'directorate': '/admin/diretoria'
+}, true) %}
+{% set admin_nav_kw = admin_nav_kw|default({}, true) %}
+{% set ep = request.endpoint or '' %}
+<!DOCTYPE html>
+<html lang="pt-BR" class="admin-portal-v2" data-url-prefix="{{ config.URL_PREFIX or '' }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d1b3e" />
+    <title>{% block title %}Gestão{% endblock %} — Diretoria</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-portal.css') }}" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy: { 950: "#0a1628", 900: "#0d1b3e", 800: "#12224d", 700: "#1a2f5c" },
+              gold: { 400: "#f9bc15", 500: "#e5a800" },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --club-primary: {{ theme_colors.primary }};
+        --club-secondary: {{ theme_colors.secondary }};
+        --club-accent: {{ theme_colors.accent }};
+      }
+    </style>
+    {% block head_extra %}{% endblock %}
+  </head>
+  <body class="ap-shell admin-shell">
+    <div class="ap-layout">
+    <div id="ap-overlay" class="ap-overlay" aria-hidden="true"></div>
+
+    <aside id="ap-sidebar" class="ap-sidebar">
+      <div class="ap-sidebar__brand">
+        <div class="flex items-center gap-3">
+          <img src="{{ club_logo_src }}" width="48" height="48" alt="" class="h-12 w-12 object-contain rounded-xl bg-white/10 p-1" />
+          <div class="min-w-0">
+            <p class="font-bold text-white text-base leading-tight truncate">{{ active_club.nome if active_club else "Clube" }}</p>
+            <p class="ap-sidebar__motto">Sempre Alerta!</p>
+          </div>
+        </div>
+        {% if painel_cargo_label %}
+        <p class="text-[11px] text-slate-400 mt-2 leading-snug">{{ painel_cargo_label }}</p>
+        {% endif %}
+      </div>
+
+      <nav class="ap-sidebar__nav" aria-label="Menu principal">
+        <a href="{{ nav.dashboard|default('/admin/') }}" class="ap-nav-link {% if ep == 'admin.dashboard' %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Dashboard">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          Dashboard
+        </a>
+        {% include "admin/partials/nav_desbravadores_group.html" %}
+        <a href="{{ nav.events|default('/admin/agenda') }}" class="ap-nav-link {% if ep in ['admin.agenda_list','admin.agenda_new','admin.agenda_edit'] %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Eventos">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Eventos
+        </a>
+        <a href="{{ nav.communications|default('/admin/publicacoes') }}" class="ap-nav-link {% if ep in ['admin.posts','admin.post_new','admin.post_edit'] %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Comunicação">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+          Comunicação
+        </a>
+        {% if admin_panel.get('show_finance_nav') %}
+        <a href="{{ nav.finance|default('/admin/financeiro') }}" class="ap-nav-link {% if ep == 'admin.finance_dashboard' %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Financeiro">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Financeiro
+        </a>
+        {% endif %}
+        {% if admin_panel.get('can_view_warehouse') %}
+        <a href="{{ nav.warehouse|default('/admin/almoxarifado') }}" class="ap-nav-link {% if ep == 'admin.admin_warehouse' %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Almoxarifado">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Almoxarifado
+        </a>
+        {% endif %}
+        <a href="{{ nav.gallery|default('/admin/galeria') }}" class="ap-nav-link {% if ep == 'admin.admin_gallery' %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Galeria">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Galeria
+        </a>
+
+        <p class="ap-nav-section">Gestão</p>
+        {% if admin_panel.show_directorate_nav %}
+        <a href="{{ nav.directorate|default('/admin/diretoria') }}" class="ap-nav-link {% if ep and ep.startswith('admin.directorate') %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Equipe da diretoria">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Equipe diretoria
+        </a>
+        {% endif %}
+        <a href="{{ nav.parents|default('/admin/responsaveis') }}" class="ap-nav-link {% if ep in ['admin.parents_list','admin.parent_detail'] %}ap-nav-link--active{% endif %}" data-ap-close-sidebar title="Responsáveis">
+          <svg class="ap-nav-link__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Responsáveis
+        </a>
+      </nav>
+
+      <div class="ap-sidebar__club-card">
+        <p class="text-xs text-slate-400">Seu clube</p>
+        <p class="text-sm font-bold text-white mt-0.5 truncate">{{ active_club.nome if active_club else "Diretoria" }}</p>
+      </div>
+
+      <div class="ap-sidebar__footer">
+        <p class="truncate text-slate-500 mb-2">{% if current_user.is_authenticated %}{{ current_user.email }}{% endif %}</p>
+        {% if session.get('super_admin_impersonating') %}
+        <a href="{{ url_for('auth.back_to_super_admin') }}" class="block text-center text-xs font-bold text-gold-400 mb-2">← Super Admin</a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="text-slate-400 hover:text-white text-xs font-semibold" data-ap-close-sidebar>Sair da conta</a>
+      </div>
+    </aside>
+
+    <div class="ap-main">
+      <header class="ap-header">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" class="ap-icon-btn lg:hidden" data-ap-menu aria-label="Menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="min-w-0">
+            <p class="ap-header__greeting">{{ admin_greeting|default('Olá') }}, <span>{{ admin_first_name|default('Direção') }}</span> 👋</p>
+            <p class="ap-header__sub">{% block header_sub %}Central do clube — tudo em um só lugar{% endblock %}</p>
+          </div>
+        </div>
+        <div class="ap-header__actions">
+          <form class="ap-search hidden md:flex" role="search" aria-label="Pesquisar">
+            <svg class="ap-search__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"/></svg>
+            <input type="search" name="q" placeholder="Buscar membros, eventos, comunicados..." />
+            <span class="ap-search__kbd">Ctrl /</span>
+          </form>
+          <a href="{{ nav.events|default('/admin/agenda') }}" class="ap-icon-btn hidden sm:flex" title="Agenda">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </a>
+          <a href="{{ nav.communications|default('/admin/publicacoes') }}" class="ap-icon-btn" title="Avisos">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            <span class="ap-icon-btn__dot" aria-hidden="true"></span>
+          </a>
+          <div class="ap-user-menu hidden sm:block" data-ap-user-menu>
+            <button type="button" class="ap-user-menu__trigger" data-ap-user-menu-trigger aria-expanded="false">
+              <div class="h-9 w-9 rounded-full bg-gradient-to-br from-navy-700 to-navy-900 text-white flex items-center justify-center text-sm font-bold">
+                {{ (admin_first_name|default('D'))[0]|upper }}
+              </div>
+              <div class="text-right hidden md:block">
+                <p class="text-sm font-semibold text-navy-900 leading-tight">{{ current_user.full_name or 'Direção' }}</p>
+                <p class="text-[11px] text-slate-500">{{ painel_cargo_label or 'Diretoria' }}</p>
+              </div>
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="ap-user-menu__dropdown" data-ap-user-menu-dropdown hidden>
+              <a href="{{ url_for('auth.usuario') }}">Meu perfil</a>
+              <a href="{{ url_for('auth.logout') }}">Sair da conta</a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="ap-content">
+      {% if session.get('super_admin_impersonating') %}
+        <section class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 text-sm ap-animate-in">
+          <strong>Modo Super Admin:</strong> você está atuando como diretoria deste clube.
+      </section>
+      {% endif %}
+      {% include "partials/flash.html" %}
+      {% block content %}{% endblock %}
+    </main>
+    </div>
+
+    <nav class="ap-bottom-nav lg:hidden" aria-label="Navegação rápida">
+      <a href="{{ nav.dashboard|default('/admin/') }}" class="{% if ep == 'admin.dashboard' %}ap-bottom-nav--active{% endif %}">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3"/></svg>
+        Início
+      </a>
+      <a href="{{ nav.members|default('/admin/membros') }}" class="{% if ap_nav_desbravadores_has_active|default(false) %}ap-bottom-nav--active{% endif %}" data-ap-open-nav-group="desbravadores">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Desbravadores
+      </a>
+      <a href="{{ nav.events|default('/admin/agenda') }}" class="{% if ep == 'admin.parent_agenda' or ep == 'admin.agenda_list' %}ap-bottom-nav--active{% endif %}">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Eventos
+      </a>
+      {% if admin_panel.get('show_finance_nav') %}
+      <a href="{{ nav.finance|default('/admin/financeiro') }}" class="{% if ep == 'admin.finance_dashboard' %}ap-bottom-nav--active{% endif %}">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+        Finanças
+      </a>
+      {% endif %}
+      <button type="button" class="{% if false %}ap-bottom-nav--active{% endif %}" data-ap-menu style="background:none;border:none;">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        Menu
+      </button>
+    </nav>
+
+    </div>
+    <script src="{{ url_for('static', filename='js/admin-portal.js') }}" defer></script>
+    {% block page_scripts %}{% endblock %}
+    {% include "partials/site_scripts.html" %}
+  </body>
+</html>

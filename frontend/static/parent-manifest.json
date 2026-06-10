@@ -1,0 +1,18 @@
+{
+  "name": "Portal Família — Clube de Desbravadores",
+  "short_name": "Família",
+  "description": "Acompanhe a evolução do seu desbravador",
+  "start_url": "/pais/",
+  "display": "standalone",
+  "background_color": "#0d1b3e",
+  "theme_color": "#0d1b3e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/img/brasao-desbravadores-oficial.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

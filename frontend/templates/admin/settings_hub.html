@@ -1,0 +1,38 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Configurações{% endblock %}
+{% block header_sub %}Equipe, permissões e sua conta{% endblock %}
+{% block content %}
+<div class="ap-page-head ap-animate-in">
+  <h1>Configurações</h1>
+  <p>Personalize o clube, gerencie a equipe e ajuste permissões.</p>
+</div>
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ap-animate-in">
+  <a href="{{ url_for('admin.directorate_list', **admin_nav_kw) }}" class="ap-card hover:shadow-lg transition block group">
+    <span class="text-3xl">★</span>
+    <h2 class="text-lg font-extrabold text-navy-900 mt-2 group-hover:text-gold-600">Equipe da diretoria</h2>
+    <p class="text-sm text-slate-500 mt-1">Quem aparece no site e cargos de liderança.</p>
+  </a>
+  <a href="{{ url_for('auth.usuario') }}" class="ap-card hover:shadow-lg transition block group">
+    <span class="text-3xl">👤</span>
+    <h2 class="text-lg font-extrabold text-navy-900 mt-2 group-hover:text-gold-600">Minha conta</h2>
+    <p class="text-sm text-slate-500 mt-1">Nome, e-mail e senha de acesso.</p>
+  </a>
+  <a href="{{ url_for('admin.parents_list', **admin_nav_kw) }}" class="ap-card hover:shadow-lg transition block group">
+    <span class="text-3xl">👪</span>
+    <h2 class="text-lg font-extrabold text-navy-900 mt-2 group-hover:text-gold-600">Responsáveis</h2>
+    <p class="text-sm text-slate-500 mt-1">Vincular desbravadores a contas cadastradas no site.</p>
+  </a>
+  {% if admin_panel.show_finance_nav %}
+  <a href="{{ url_for('admin.finance_dashboard', **admin_nav_kw) }}" class="ap-card hover:shadow-lg transition block group">
+    <span class="text-3xl">💳</span>
+    <h2 class="text-lg font-extrabold text-navy-900 mt-2 group-hover:text-gold-600">Chave PIX</h2>
+    <p class="text-sm text-slate-500 mt-1">Configure no módulo financeiro.</p>
+  </a>
+  {% endif %}
+  <a href="{{ url_for('admin.posts', **admin_nav_kw) }}" class="ap-card hover:shadow-lg transition block group">
+    <span class="text-3xl">📢</span>
+    <h2 class="text-lg font-extrabold text-navy-900 mt-2 group-hover:text-gold-600">Comunicação</h2>
+    <p class="text-sm text-slate-500 mt-1">Avisos e notícias para as famílias.</p>
+  </a>
+</div>
+{% endblock %}

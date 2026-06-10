@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Meu perfil — Liderança</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-[100dvh] bg-slate-100">
+    <main class="max-w-3xl mx-auto px-4 py-6 sm:py-8">
+      <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <header class="px-5 sm:px-8 pt-7 pb-6 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white">
+          <h1 class="text-xl font-extrabold text-slate-900">Meu perfil</h1>
+          <p class="text-sm text-slate-500 mt-1">Dados pessoais da liderança</p>
+        </header>
+
+        <div class="px-5 sm:px-8 py-6">
+          {% include "partials/flash.html" %}
+          <form method="post" enctype="multipart/form-data" class="space-y-5" data-profile-form>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="remove_photo" value="0" data-remove-photo />
+
+            <div class="flex flex-col sm:flex-row sm:items-start gap-5 pb-2">
+              <div class="relative">
+                {% if profile_photo_url %}
+                <img src="{{ profile_photo_url }}" alt="Foto de perfil" class="h-24 w-24 rounded-full object-cover ring-4 ring-white shadow-md border border-slate-200" data-photo-preview />
+                {% else %}
+                <div class="h-24 w-24 rounded-full bg-slate-200 text-slate-600 font-bold text-3xl flex items-center justify-center ring-4 ring-white shadow-md border border-slate-200" data-photo-fallback>
+                  {{ (current_user.full_name or 'U')[0]|upper }}
+                </div>
+                <img src="" alt="Foto de perfil" class="hidden h-24 w-24 rounded-full object-cover ring-4 ring-white shadow-md border border-slate-200" data-photo-preview />
+                {% endif %}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-lg font-bold text-slate-900">{{ current_user.full_name or 'Usuário' }}</p>
+                <p class="text-sm text-slate-500">{{ role_label or 'Diretoria' }}</p>
+                <p class="text-sm text-slate-500">{{ clube.nome if clube else 'Clube não definido' }}</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <label class="ui-btn ui-btn--outline rounded-xl cursor-pointer">
+                    Alterar foto
+                    <input type="file" name="profile_photo" accept=".jpg,.jpeg,.png,.webp" class="hidden" data-photo-input />
+                  </label>
+                  <button type="button" class="ui-btn ui-btn--ghost rounded-xl" data-remove-photo-btn>Remover foto</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nome</label>
+                <input name="full_name" value="{{ profile.nome_completo or current_user.full_name or '' }}" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Cargo</label>
+                <input value="{{ role_label or 'Diretoria' }}" readonly class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Clube/Unidade</label>
+                <input value="{{ clube.nome if clube else '—' }}" readonly class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">E-mail</label>
+                <input name="email" type="email" value="{{ current_user.email }}" autocomplete="email" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone</label>
+                <input name="phone" value="{{ profile_phone }}" placeholder="(00) 00000-0000" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Senha atual (para alterar e-mail)</label>
+                <input type="password" name="email_password" autocomplete="current-password" class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-sky-500/20 outline-none" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Bio (opcional)</label>
+                <textarea name="bio" rows="3" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 outline-none resize-y" placeholder="Fale um pouco sobre você...">{{ profile_bio }}</textarea>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+              <button type="submit" class="ui-btn ui-btn--brand rounded-xl justify-center">Salvar alterações</button>
+              <a href="{{ url_for('auth.change_password', back=back_url) }}" class="ui-btn ui-btn--outline rounded-xl justify-center">Alterar senha</a>
+              <a href="{{ back_url }}" class="ui-btn ui-btn--ghost rounded-xl justify-center">Voltar</a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+    <script>
+      (function () {
+        var fileInput = document.querySelector("[data-photo-input]");
+        var preview = document.querySelector("[data-photo-preview]");
+        var fallback = document.querySelector("[data-photo-fallback]");
+        var removeInput = document.querySelector("[data-remove-photo]");
+        var removeBtn = document.querySelector("[data-remove-photo-btn]");
+        if (!fileInput || !preview || !removeInput || !removeBtn) return;
+
+        function showFallback() {
+          if (fallback) fallback.classList.remove("hidden");
+          preview.classList.add("hidden");
+          preview.removeAttribute("src");
+        }
+
+        fileInput.addEventListener("change", function () {
+          var file = fileInput.files && fileInput.files[0];
+          if (!file) return;
+          var ext = (file.name.split(".").pop() || "").toLowerCase();
+          if (["jpg", "jpeg", "png", "webp"].indexOf(ext) === -1) {
+            fileInput.value = "";
+            return;
+          }
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            if (fallback) fallback.classList.add("hidden");
+            preview.src = ev.target.result;
+            preview.classList.remove("hidden");
+            removeInput.value = "0";
+          };
+          reader.readAsDataURL(file);
+        });
+
+        removeBtn.addEventListener("click", function () {
+          fileInput.value = "";
+          removeInput.value = "1";
+          showFallback();
+        });
+      })();
+    </script>
+    {% include "partials/site_scripts.html" %}
+  </body>
+</html>

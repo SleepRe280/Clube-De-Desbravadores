@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="login-premium">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Entrar — Clube de Desbravadores</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login-premium.css') }}" />
+  </head>
+  <body class="login-premium">
+    <div class="login-shell">
+      <aside class="login-hero" aria-label="Boas-vindas">
+        <div class="login-hero__bg" role="presentation"></div>
+        <div class="login-hero__overlay" role="presentation"></div>
+        <div class="login-hero__inner">
+          <header class="login-hero__brand">
+            <img
+              src="{{ login_brand_img }}"
+              width="72"
+              height="72"
+              alt="Brasão do Clube de Desbravadores"
+              class="login-hero__logo"
+            />
+            <div>
+              <p class="login-hero__brand-label">Clube de Desbravadores</p>
+              <p class="login-hero__brand-title">Portal de acesso</p>
+            </div>
+          </header>
+
+          <div class="login-hero__content">
+            <h1 class="login-hero__headline">Bem-vindo(a) de volta!</h1>
+            <div class="login-hero__divider" role="presentation"></div>
+            <p class="login-hero__desc">
+              Acesse sua conta e continue acompanhando o progresso dos desbravadores do clube.
+            </p>
+          </div>
+
+          <blockquote class="login-hero__verse">
+            <svg class="login-hero__verse-icon" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+              <path d="M10 8c-3.3 0-6 2.7-6 6v2h6v8H4v-8c0-4.4 3.6-8 8-8h2V8h-4zm14 0c-3.3 0-6 2.7-6 6v2h6v8h-6v-8c0-4.4 3.6-8 8-8h2V8h-4z" />
+            </svg>
+            <p class="login-hero__verse-text">
+              “Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no
+              procedimento, no amor, na fé, na pureza.”
+            </p>
+            <cite class="login-hero__verse-ref">1 Timóteo 4:12</cite>
+          </blockquote>
+
+          <footer class="login-hero__trust">
+            <span class="login-hero__trust-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <div>
+              <p class="login-hero__trust-title">Segurança e privacidade</p>
+              <p class="login-hero__trust-desc">Seus dados estão protegidos conosco</p>
+            </div>
+          </footer>
+        </div>
+      </aside>
+
+      <div class="login-curve" aria-hidden="true">
+        <svg viewBox="0 0 100 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            fill="#f4f6fb"
+            d="M0,0 C55,120 35,280 58,500 C32,680 62,860 0,1000 L100,1000 L100,0 Z"
+          />
+        </svg>
+      </div>
+
+      <section class="login-panel" aria-label="Formulário de login">
+        <svg class="login-panel__decor" viewBox="0 0 400 400" aria-hidden="true">
+          <circle cx="200" cy="200" r="180" />
+          <circle cx="200" cy="200" r="140" />
+          <circle cx="200" cy="200" r="100" />
+          <circle cx="200" cy="200" r="60" />
+        </svg>
+
+        <div class="login-panel__wrap">
+          <div class="login-mobile-brand">
+            <img
+              src="{{ login_brand_img }}"
+              width="72"
+              height="72"
+              alt="Brasão do Clube de Desbravadores"
+              class="login-mobile-brand__logo"
+            />
+            <p class="login-mobile-brand__label">Clube de Desbravadores</p>
+            <p class="login-mobile-brand__welcome">Bem-vindo(a) de volta!</p>
+          </div>
+
+          <div class="login-card">
+            <div class="login-card__icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" />
+              </svg>
+            </div>
+            <p class="login-card__eyebrow">Clube de Desbravadores</p>
+            <h2 class="login-card__title">Entrar no portal</h2>
+            <p class="login-card__subtitle">Identifique-se para continuar</p>
+
+            {% include "partials/flash.html" %}
+
+            <form method="post" class="login-form" novalidate>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}" />{% endif %}
+
+              <div class="login-field">
+                <label for="login-email">E-mail</label>
+                <div class="login-input-wrap">
+                  <svg class="login-input-wrap__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M4 6h16v12H4z" stroke-linejoin="round" />
+                    <path d="M4 7l8 6 8-6" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <input
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    autocomplete="email"
+                    required
+                    placeholder="seuemail@gmail.com"
+                  />
+                </div>
+              </div>
+
+              <div class="login-field">
+                <label for="login-password">Senha</label>
+                <div class="login-input-wrap login-input-wrap--password">
+                  <svg class="login-input-wrap__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" />
+                  </svg>
+                  <input
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    id="toggle-password"
+                    class="login-toggle-pw"
+                    aria-label="Mostrar senha"
+                    aria-pressed="false"
+                  >
+                    <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="login-row">
+                <label class="login-remember">
+                  <input type="checkbox" name="remember" value="1" checked />
+                  Lembrar-me
+                </label>
+                <a class="login-link" href="{{ url_for('auth.forgot_password') }}">Esqueci minha senha</a>
+              </div>
+
+              <button type="submit" class="login-submit">
+                Entrar
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </form>
+
+            <div class="login-divider" aria-hidden="true">ou</div>
+            <p class="login-card__footer">
+              Ainda não tem conta?
+              <a href="{{ url_for('auth.register') }}">Criar conta</a>
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script src="{{ url_for('static', filename='js/login-premium.js') }}" defer></script>
+  </body>
+</html>

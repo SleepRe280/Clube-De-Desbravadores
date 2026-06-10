@@ -1,0 +1,285 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Início{% endblock %}
+
+{% block content %}
+{% set active_child = portal_child if portal_child else (portal_children[0] if portal_children else none) %}
+{% set _months_abbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] %}
+{% if active_child %}
+{% set cn = active_child.full_name.split()[0] %}
+{% set journey = portal_journey|default(none) %}
+{% set stats = portal_stats %}
+
+{# Hero #}
+<section class="pp-card pp-card--hero pp-animate-in pp-animate-in--1 p-6 sm:p-8 mb-6 relative overflow-hidden">
+  <div class="pp-hero-stars" aria-hidden="true"></div>
+  <div class="absolute top-0 right-0 w-56 h-56 bg-gold-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" aria-hidden="true"></div>
+  <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
+    <div class="flex items-start gap-4 flex-1 min-w-0">
+      <div class="relative shrink-0">
+        {% if active_child.photo_filename %}
+        <img src="{{ url_for('uploaded_file', rel_path=active_child.photo_filename) }}" class="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover ring-4 ring-gold-400/50 shadow-2xl" alt="" />
+        {% else %}
+        <div class="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-gold-400 to-amber-500 flex items-center justify-center text-3xl font-extrabold text-navy-900 shadow-2xl">{{ cn[0]|upper }}</div>
+        {% endif %}
+        {% if journey %}
+        <span class="pp-level-badge">NÍVEL {{ journey.level_number }}</span>
+        {% endif %}
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="text-gold-400 text-[10px] font-extrabold uppercase tracking-[0.2em]">Resumo do desbravador</p>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1 tracking-tight">{{ cn }}</h2>
+        <p class="text-slate-300 text-sm mt-1">{{ stats.unit }} · {{ stats.class_label }}</p>
+        <div class="mt-4 max-w-md">
+          <div class="flex justify-between text-xs text-slate-300 mb-1.5">
+            <span class="font-semibold">Progresso da classe</span>
+            <span class="font-extrabold text-gold-400" data-pp-count="{{ stats.performance }}">0</span><span class="font-extrabold text-gold-400">%</span>
+          </div>
+          <div class="pp-progress pp-progress--lg" data-pp-progress="{{ stats.performance }}"><span></span></div>
+          <p class="text-[11px] text-slate-400 mt-2">{{ stats.notebook_remaining }} itens restantes no caderno</p>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-4">
+          <a href="{{ (portal_nav|default({})).profile|default(url_for('parent.child_detail', member_id=active_child.id)) }}" class="pp-btn pp-btn--ghost-light text-sm">Perfil Desbravador →</a>
+          <a href="{{ (portal_nav|default({})).progress|default('/pais/progresso') }}" class="pp-btn pp-btn--gold text-sm">Ver meu progresso →</a>
+        </div>
+      </div>
+    </div>
+    <div class="hidden lg:flex items-center justify-center shrink-0">
+      <div class="h-32 w-32 rounded-full bg-gradient-to-br from-gold-400/25 to-blue-500/10 flex items-center justify-center ring-4 ring-gold-400/25 shadow-[0_0_40px_rgba(255,184,0,0.25)]">
+        <img src="{{ url_for('static', filename='img/brasao-desbravadores-oficial.png') }}" class="h-24 w-24 object-contain drop-shadow-2xl" alt="" />
+      </div>
+    </div>
+  </div>
+</section>
+
+{# Stats #}
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+  <div class="pp-stat pp-animate-in pp-animate-in--2" style="--pp-ring-color:#22c55e;--pp-ring-pct:{{ stats.month_attendance_rate }};--pp-accent:#22c55e">
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="pp-stat__ring" aria-hidden="true"><span>{{ stats.month_attendance_rate }}%</span></div>
+      <span class="text-xs font-bold uppercase text-slate-500 tracking-wide">Frequência</span>
+    </div>
+    <p class="pp-stat__value" data-pp-count="{{ stats.month_attendance_rate }}">0</p>
+    <p class="pp-stat__trend pp-stat__trend--up">▲ neste mês</p>
+  </div>
+  <div class="pp-stat pp-animate-in pp-animate-in--2" style="--pp-accent:#3b82f6">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="pp-stat__icon bg-sky-100 text-sky-600">📘</span>
+      <span class="text-xs font-bold uppercase text-slate-500">Especialidades</span>
+    </div>
+    <p class="pp-stat__value" data-pp-count="{{ stats.specialties_completed|default(0) }}">0</p>
+    <p class="pp-stat__trend">{{ stats.specialties_progress_label|default('em progresso') }}</p>
+  </div>
+  <div class="pp-stat pp-animate-in pp-animate-in--3" style="--pp-accent:#f59e0b">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="pp-stat__icon bg-amber-100 text-amber-600">🏅</span>
+      <span class="text-xs font-bold uppercase text-slate-500">Conquistas</span>
+    </div>
+    <p class="pp-stat__value" data-pp-count="{{ achievements|length }}">0</p>
+    <p class="pp-stat__trend">▲ duques e atividades</p>
+  </div>
+  <div class="pp-stat pp-animate-in pp-animate-in--3" style="--pp-accent:#8b5cf6">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="pp-stat__icon bg-violet-100 text-violet-600">👥</span>
+      <span class="text-xs font-bold uppercase text-slate-500">Participações</span>
+    </div>
+    <p class="pp-stat__value" data-pp-count="{{ stats.activities_done }}">0</p>
+    <p class="pp-stat__trend">atividades concluídas</p>
+  </div>
+</section>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+  {# Eventos #}
+  <section class="pp-card pp-card--flat p-5 xl:col-span-1 pp-animate-in pp-animate-in--4">
+    <h3 class="font-extrabold text-navy-900 flex items-center gap-2 text-base">
+      <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gold-400/20 text-lg">📅</span>
+      Próximos eventos
+    </h3>
+    <ul class="mt-4 space-y-1">
+      {% for ev in upcoming_events %}
+      {% set tag_label, tag_kind = event_status_tag(ev.event_date, loop.index0, ev.status) %}
+      <li>
+        <article class="pp-event">
+          <div class="pp-event__date">
+            <span class="pp-event__date-day">{{ ev.event_date.day }}</span>
+            <span class="pp-event__date-mon">{{ _months_abbr[ev.event_date.month - 1] }}</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-sm text-slate-800 leading-snug">{{ ev.title }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ ev.location or 'Local a definir' }}{% if ev.event_time %} · {{ ev.event_time[:5] }}{% endif %}</p>
+            <span class="pp-badge-pill pp-badge-pill--{{ tag_kind }} mt-1.5">{{ tag_label }}</span>
+          </div>
+        </article>
+      </li>
+      {% else %}
+      <li class="text-sm text-slate-500 py-6 text-center">Nenhum evento agendado.</li>
+      {% endfor %}
+    </ul>
+    <a href="{{ (portal_nav|default({})).agenda|default('/pais/agenda') }}" class="pp-btn pp-btn--calendar">Ver calendário completo</a>
+  </section>
+
+  {# Feed #}
+  <section class="xl:col-span-2 pp-animate-in pp-animate-in--4">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-extrabold text-navy-900 text-base">Feed do clube</h3>
+      <a href="{{ (portal_nav|default({})).communications|default('/pais/comunicados') }}" class="text-sm font-bold text-gold-600 hover:text-gold-500 transition">Ver tudo →</a>
+    </div>
+    <div class="space-y-4">
+      {% for post in feed_posts[:2] %}
+      <article class="pp-feed-post">
+        <div class="flex items-center gap-3 p-4 border-b border-slate-100/80">
+          <img src="{{ club_logo_src }}" class="h-11 w-11 rounded-xl object-contain bg-slate-50 p-1 ring-1 ring-slate-100" alt="" />
+          <div>
+            <p class="font-bold text-sm text-slate-900">{% if post.post_kind == post_kind_noticia %}{{ news_labels.get(post.level, 'Notícia') }}{% else %}Comunicado{% endif %}</p>
+            <p class="text-xs text-slate-500">{{ post.created_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+          </div>
+        </div>
+        {% if post.image_filename %}
+        <div class="pp-feed-grid">
+          <div class="pp-feed-grid__main">
+            <img src="{{ url_for('uploaded_file', rel_path=post.image_filename) }}" alt="" loading="lazy" />
+          </div>
+        </div>
+        {% endif %}
+        <div class="p-4 sm:p-5">
+          <h4 class="font-bold text-slate-900 text-base">{{ post.title }}</h4>
+          <p class="text-sm text-slate-600 mt-2 line-clamp-3 whitespace-pre-line leading-relaxed">{{ post.body }}</p>
+          <div class="pp-feed-actions flex gap-5 mt-4 pt-3 border-t border-slate-100">
+            <button type="button" data-pp-like data-count="0" class="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-rose-500 transition">
+              <span aria-hidden="true">♥</span> <span data-like-count>0</span> curtidas
+            </button>
+            <span class="text-sm text-slate-400 font-medium">💬 Comentários em breve</span>
+          </div>
+        </div>
+      </article>
+      {% else %}
+      <p class="pp-card p-8 text-center text-slate-500 text-sm">Sem publicações no momento.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  {# Conquistas #}
+  <section class="pp-card pp-card--flat p-5 pp-animate-in pp-animate-in--5">
+    <h3 class="font-extrabold text-navy-900 text-base flex items-center gap-2">
+      <span>🏆</span> Últimas conquistas
+    </h3>
+    <ul class="mt-4 space-y-2">
+      {% for a in achievements %}
+      <li class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition">
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-amber-50 text-xl shadow-sm">{% if a.icon == 'star' %}⭐{% elif a.icon == 'medal' %}🎖️{% else %}🏅{% endif %}</span>
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-slate-800 truncate">{{ a.title }}</p>
+          <p class="text-xs text-slate-500">{% if a.date %}{% if a.date is string %}{{ a.date }}{% else %}{{ a.date.strftime('%d/%m/%Y') }}{% endif %}{% endif %}</p>
+        </div>
+      </li>
+      {% else %}
+      <li class="text-sm text-slate-500 py-4">Conquistas aparecerão aqui conforme o progresso.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# Jornada do Desbravador #}
+  {% if journey %}
+  <section class="pp-card pp-card--flat pp-journey pp-animate-in pp-animate-in--5">
+    <h3 class="font-extrabold text-navy-900 text-base flex items-center gap-2">
+      <span>🧭</span> Jornada do Desbravador
+    </h3>
+    <div class="pp-journey__track" role="list" aria-label="Níveis da jornada">
+      {% for lv in journey.levels %}
+      <div class="pp-journey__step pp-journey__step--{{ lv.state }}" role="listitem">
+        <div class="pp-journey__node" title="{{ lv.label }}">
+          {% if lv.state == 'done' %}✓{% elif lv.state == 'locked' %}🔒{% else %}★{% endif %}
+        </div>
+        <span class="pp-journey__label">{{ lv.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="pp-journey__xp">
+      <div class="pp-journey__xp-meta">
+        <span><strong class="text-navy-900">{{ journey.xp }}</strong> / {{ journey.xp_level_max }} XP</span>
+        <span class="text-gold-600 font-bold">{{ journey.progress_pct }}%</span>
+      </div>
+      <div class="pp-progress pp-progress--green" data-pp-progress="{{ journey.progress_pct }}"><span></span></div>
+      <p class="text-xs text-slate-500 mt-2">Faltam <strong class="text-navy-800">{{ journey.xp_to_next }}</strong> pontos para o próximo nível.</p>
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  {# Gráfico #}
+  <section class="pp-card pp-card--flat p-5 pp-animate-in pp-animate-in--6">
+    <h3 class="font-extrabold text-navy-900 text-base">📈 Desempenho mensal</h3>
+    <p class="text-xs text-slate-500 mt-1">Frequência nos últimos meses</p>
+    <div class="pp-chart-wrap">
+      <canvas id="ppChartAttendance" data-labels='{{ chart_labels|safe }}' data-values='{{ chart_values|safe }}' data-peak="{{ stats.month_attendance_rate }}"></canvas>
+    </div>
+  </section>
+
+  {# Financeiro #}
+  <section class="pp-card pp-card--flat p-5 pp-animate-in pp-animate-in--6">
+    <h3 class="font-extrabold text-navy-900 text-base flex items-center gap-2">💳 Financeiro</h3>
+    {% if stats.finance_ok %}
+    <p class="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-50 text-emerald-800 font-bold text-sm px-4 py-2.5 border border-emerald-100">
+      <span class="text-lg">✓</span> Situação atual: Tudo em dia! 🎉
+    </p>
+    {% elif stats.fees_overdue %}
+    <p class="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-50 text-red-800 font-bold text-sm px-4 py-2.5">Há cobranças vencidas</p>
+    {% else %}
+    <p class="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-50 text-amber-900 font-bold text-sm px-4 py-2.5">{{ stats.fees_pending }} pagamento(s) pendente(s)</p>
+    {% endif %}
+    <ul class="mt-4">
+      {% for fee in recent_fees|default([]) %}
+      <li class="pp-finance-row">
+        <div>
+          <p class="text-sm font-bold text-slate-800">{{ fee.label }}</p>
+          {% if fee.paid and fee.paid_at %}
+          <span class="pp-badge-pill pp-badge-pill--ok mt-1">Pago em {{ fee.paid_at.strftime('%d/%m/%Y') }}</span>
+          {% else %}
+          <span class="pp-badge-pill pp-badge-pill--warn mt-1">Pendente</span>
+          {% endif %}
+        </div>
+        <p class="text-sm font-extrabold text-navy-900">{{ format_brl(fee.amount_cents) }}</p>
+      </li>
+      {% else %}
+      <li class="text-sm text-slate-500 py-2">Nenhuma cobrança recente.</li>
+      {% endfor %}
+    </ul>
+    <a href="{{ (portal_nav|default({})).finance|default('/pais/financeiro') }}" class="pp-btn pp-btn--navy mt-4 w-full sm:w-auto">Ver financeiro completo</a>
+  </section>
+</div>
+
+{# Banner motivacional #}
+{% if motivacional and journey %}
+<section class="pp-banner-motivation pp-animate-in flex flex-wrap items-center justify-between gap-4">
+  <div class="flex items-center gap-4 min-w-0">
+    <span class="text-4xl shrink-0 drop-shadow-lg">🏆</span>
+    <div>
+      <p class="font-extrabold text-lg leading-snug">Parabéns, {{ cn }}! 🎉 Você está se destacando!</p>
+      <p class="text-sm text-slate-300 mt-1 opacity-95">{{ motivacional }}</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-md border border-white/10 min-w-[200px]">
+    <span class="text-2xl">🔥</span>
+    <div class="flex-1 min-w-0">
+      <p class="text-[10px] text-gold-400 font-extrabold uppercase tracking-wider">Próxima meta</p>
+      <p class="text-sm font-bold truncate">{{ journey.next_goal_label }}</p>
+      <div class="pp-progress mt-2" data-pp-progress="{{ stats.notebook_pct }}"><span></span></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% else %}
+<section class="pp-card p-12 text-center pp-animate-in">
+  <p class="text-6xl mb-4">🌲</p>
+  <h2 class="text-xl font-bold text-navy-900">Nenhum desbravador vinculado</h2>
+  <p class="text-slate-600 mt-2 max-w-md mx-auto">
+    O diretor ou a secretaria deve vincular seu filho(a) em <strong>Admin → Responsáveis e vínculos</strong>
+    à conta com que você entrou: <strong>{{ current_user.email }}</strong>.
+  </p>
+  <p class="text-xs text-slate-500 mt-4">Cadastre-se em «Criar conta» se ainda não tiver conta neste clube.</p>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,159 @@
+/**
+ * Rolagem e responsividade global — portais admin/pais e páginas legadas
+ */
+
+:root {
+  --app-bottom-nav-height: 5rem;
+  --app-scroll-pad-bottom: calc(
+    var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1.25rem
+  );
+}
+
+/* —— Base: documento sempre rolável —— */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+html.admin-portal-v2,
+html.parent-portal-v2 {
+  height: auto;
+  min-height: 100%;
+}
+
+html.admin-portal-v2 body.ap-shell,
+html.admin-portal-v2 body.admin-shell,
+html.parent-portal-v2 body.pp-shell {
+  height: auto;
+  min-height: 100dvh;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* —— Portal diretoria (ap-*) —— */
+html.admin-portal-v2 .ap-layout {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 100dvh;
+  height: auto;
+  width: 100%;
+  overflow: visible;
+}
+
+html.admin-portal-v2 .ap-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: min(100dvh, 100%);
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  html.admin-portal-v2 .ap-main {
+    width: calc(100% - var(--ap-sidebar-w, 17.75rem));
+    margin-left: var(--ap-sidebar-w, 17.75rem);
+  }
+}
+
+html.admin-portal-v2 .ap-content {
+  flex: 1 1 auto;
+  overflow: visible;
+  padding-bottom: var(--app-scroll-pad-bottom) !important;
+  scroll-padding-bottom: var(--app-scroll-pad-bottom);
+}
+
+@media (min-width: 1024px) {
+  html.admin-portal-v2 .ap-content {
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+html.admin-portal-v2 .ap-bottom-nav {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+/* —— Portal família (pp-*) —— */
+html.parent-portal-v2 body.pp-shell {
+  display: block;
+}
+
+html.parent-portal-v2 .pp-main {
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+html.parent-portal-v2 .pp-content {
+  overflow: visible;
+  padding-bottom: var(--app-scroll-pad-bottom) !important;
+  scroll-padding-bottom: var(--app-scroll-pad-bottom);
+}
+
+@media (min-width: 1024px) {
+  html.parent-portal-v2 .pp-content {
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* —— Tabelas e formulários largos —— */
+.ap-content .table-responsive,
+.pp-content .table-responsive,
+.admin-main .table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 0.5rem;
+}
+
+.ap-content table,
+.pp-content table,
+.admin-main table {
+  max-width: 100%;
+}
+
+.ap-content .max-w-3xl,
+.ap-content .max-w-7xl,
+.pp-content.max-w-7xl {
+  max-width: 100%;
+}
+
+/* —— Grids responsivos em páginas admin legadas —— */
+.ap-content .grid,
+.pp-content .grid {
+  min-width: 0;
+}
+
+/* —— Auth / páginas avulsas —— */
+body.min-h-screen,
+main.min-h-screen {
+  min-height: 100dvh;
+  height: auto;
+}
+
+/* —— Utilitário de página —— */
+.page-scroll-safe {
+  padding-bottom: var(--app-scroll-pad-bottom);
+}
+
+@media (min-width: 1024px) {
+  .page-scroll-safe {
+    padding-bottom: 2rem;
+  }
+}
+
+/* Telas muito estreitas */
+@media (max-width: 380px) {
+  html.admin-portal-v2 .ap-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  html.admin-portal-v2 .ap-quick-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

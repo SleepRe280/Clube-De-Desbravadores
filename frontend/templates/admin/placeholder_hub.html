@@ -1,0 +1,15 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ hub_title|default('Em breve') }}{% endblock %}
+{% block content %}
+<div class="ap-card ap-animate-in text-center py-16 max-w-lg mx-auto">
+  <p class="text-5xl mb-4">{{ hub_icon|default('🚀') }}</p>
+  <h1 class="text-2xl font-extrabold text-navy-900">{{ hub_title|default('Módulo') }}</h1>
+  <p class="text-slate-600 text-sm mt-3 leading-relaxed">Estamos preparando esta área com a mesma experiência moderna do restante do painel. Enquanto isso, use os módulos já disponíveis:</p>
+  <div class="mt-6 flex flex-wrap justify-center gap-2">
+    <a href="{{ nav.members|default('/admin/membros') }}" class="ui-btn ui-btn--outline rounded-xl">Membros</a>
+    <a href="{{ nav.events|default('/admin/agenda') }}" class="ui-btn ui-btn--outline rounded-xl">Eventos</a>
+    <a href="{{ nav.finance|default('/admin/financeiro') }}" class="ui-btn ui-btn--outline rounded-xl">Financeiro</a>
+    <a href="{{ nav.dashboard|default('/admin/') }}" class="ui-btn ui-btn--primary rounded-xl">Dashboard</a>
+  </div>
+</div>
+{% endblock %}

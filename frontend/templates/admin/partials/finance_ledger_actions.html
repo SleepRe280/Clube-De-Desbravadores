@@ -1,0 +1,7 @@
+{# Excluir lançamento de caixa (entrada/saída) #}
+{% if can_write_finance %}
+<form method="post" action="{{ url_for('admin.finance_ledger_delete', lid=m.id) }}" class="fn-ledger-actions__form" onsubmit="return confirm('Excluir este lançamento de caixa? Esta ação não pode ser desfeita.');">
+  {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+  <button type="submit" class="fn-mini-btn fn-mini-btn--no" title="Excluir lançamento">Excluir</button>
+</form>
+{% endif %}

@@ -1,0 +1,12 @@
+{% if m.can_delete %}
+<form
+  method="post"
+  action="{{ url_for('admin.warehouse_movement_delete', mid=m.id) }}"
+  class="wh-mv-delete-form"
+  onsubmit="return confirm('Excluir este lançamento? O estoque será recalculado.');"
+>
+  {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+  <input type="hidden" name="tab" value="{{ active_tab|default('historico') }}" />
+  <button type="submit" class="wh-mini wh-mini--del" title="Excluir lançamento">Excluir</button>
+</form>
+{% endif %}

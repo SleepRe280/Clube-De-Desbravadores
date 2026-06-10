@@ -1,0 +1,33 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Documentos{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-extrabold text-navy-900 mb-6">Central de documentos</h2>
+
+{% if portal_child %}
+<div class="grid gap-4 sm:grid-cols-2">
+  <section class="pp-card p-5">
+    <h3 class="font-bold text-navy-900 flex items-center gap-2">🏥 Dados médicos</h3>
+    <ul class="mt-4 space-y-2 text-sm text-slate-700">
+      <li><span class="text-slate-500">Tipo sanguíneo:</span> {{ portal_child.blood_type or '—' }}</li>
+      <li><span class="text-slate-500">Emergência:</span> {{ portal_child.emergency_contact_name or '—' }}</li>
+      <li><span class="text-slate-500">Telefone:</span> {{ portal_child.emergency_contact_phone or '—' }}</li>
+    </ul>
+    <p class="text-xs text-slate-500 mt-4">Fichas e autorizações completas são geridas pela diretoria.</p>
+  </section>
+  <section class="pp-card p-5">
+    <h3 class="font-bold text-navy-900 flex items-center gap-2">👨‍👩‍👧 Responsáveis</h3>
+    <ul class="mt-4 space-y-2 text-sm text-slate-700">
+      <li><span class="text-slate-500">Pai:</span> {{ portal_child.father_name or '—' }}</li>
+      <li><span class="text-slate-500">Mãe:</span> {{ portal_child.mother_name or '—' }}</li>
+    </ul>
+  </section>
+  <section class="pp-card p-5 sm:col-span-2">
+    <h3 class="font-bold text-navy-900">📄 Documentos digitais</h3>
+    <p class="text-sm text-slate-600 mt-2">Upload, assinatura digital e PDFs estarão disponíveis em uma próxima atualização. Por enquanto, solicite formulários à secretaria do clube.</p>
+    <a href="{{ (portal_nav|default({})).communications|default('/pais/comunicados') }}" class="inline-flex mt-4 rounded-xl bg-navy-900 text-gold-400 text-sm font-bold px-4 py-2">Ver comunicados</a>
+  </section>
+</div>
+{% else %}
+<p class="pp-card p-8 text-center text-slate-600">Vincule um desbravador para ver documentos.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Responsáveis e vínculos{% endblock %}
+{% block header_sub %}Gestão de famílias — vínculos portal e acompanhamento inteligente{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/parents-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set m = metrics|default({}) %}
+{% set flash_success = '' %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    {% if category == 'success' %}{% set flash_success = message %}{% endif %}
+  {% endfor %}
+{% endwith %}
+
+<div
+  id="pr-app"
+  class="pr-page ap-animate-in"
+  data-config='{{ {"flashSuccess": flash_success, "canLink": admin_panel.can_manage_member_links}|tojson }}'
+>
+  <header class="pr-page-head">
+    <div>
+      <h1>Responsáveis e vínculos</h1>
+      <p>
+        O responsável cria conta em <strong>Criar conta</strong> no site. Depois, a diretoria vincula cada
+        desbravador à conta correta — o filho passa a aparecer em <code class="bg-slate-100 px-1 rounded text-xs">/pais/</code>
+        automaticamente.
+      </p>
+    </div>
+  </header>
+
+  <section class="pr-kpi-row" aria-label="Indicadores de responsáveis">
+    <article class="pr-kpi">
+      <div class="pr-kpi__icon pr-kpi__icon--blue" aria-hidden="true">👨‍👩‍👧</div>
+      <p class="pr-kpi__label">Responsáveis cadastrados</p>
+      <p class="pr-kpi__value">{{ m.n_parents|default(0) }}</p>
+    </article>
+    <article class="pr-kpi">
+      <div class="pr-kpi__icon pr-kpi__icon--red" aria-hidden="true">⚠</div>
+      <p class="pr-kpi__label">Sem responsável</p>
+      <p class="pr-kpi__value">{{ m.n_unlinked|default(0) }}</p>
+    </article>
+    <article class="pr-kpi">
+      <div class="pr-kpi__icon pr-kpi__icon--green" aria-hidden="true">🔗</div>
+      <p class="pr-kpi__label">Vínculos no mês</p>
+      <p class="pr-kpi__value">{{ m.links_month|default(0) }}</p>
+    </article>
+    <article class="pr-kpi">
+      <div class="pr-kpi__icon pr-kpi__icon--amber" aria-hidden="true">⏳</div>
+      <p class="pr-kpi__label">Pendentes</p>
+      <p class="pr-kpi__value">{{ m.n_pending|default(0) }}</p>
+    </article>
+  </section>
+
+  {% if admin_panel.can_manage_member_links %}
+  <section class="pr-card" aria-labelledby="pr-link-title">
+    <h2 id="pr-link-title" class="pr-card__title">Vincular desbravador a responsável</h2>
+    <p class="pr-card__sub">Busque a conta do responsável e o desbravador. Confirme o tipo de vínculo antes de salvar.</p>
+
+    {% if parent_accounts and unlinked_members %}
+    <div class="pr-link-layout">
+      <form id="pr-link-form" method="post" class="pr-link-grid" novalidate>
+        {% if admin_scope_clube_id %}
+        <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+        {% endif %}
+        <input type="hidden" name="action" value="link" />
+        <input type="hidden" name="parent_user_id" id="pr-parent-id" value="" />
+        <input type="hidden" name="member_id" id="pr-member-id" value="" />
+
+        <div class="pr-field pr-search-wrap">
+          <label for="pr-parent-search">Responsável</label>
+          <span class="pr-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            id="pr-parent-search"
+            class="pr-search-input"
+            placeholder="Nome ou e-mail do responsável…"
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="pr-parent-ac"
+          />
+          <div id="pr-parent-ac" class="pr-ac-list" role="listbox"></div>
+        </div>
+
+        <div class="pr-field pr-search-wrap">
+          <label for="pr-member-search">Desbravador</label>
+          <span class="pr-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            id="pr-member-search"
+            class="pr-search-input"
+            placeholder="Nome ou unidade…"
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="pr-member-ac"
+          />
+          <div id="pr-member-ac" class="pr-ac-list" role="listbox"></div>
+        </div>
+
+        <div class="pr-field">
+          <label for="pr-link-type">Tipo de vínculo</label>
+          <select name="link_type" id="pr-link-type" class="pr-type-select">
+            {% for code, label in link_types %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="pr-preview-row" style="grid-column: 1 / -1">
+          <div id="pr-parent-preview" class="pr-person-card" aria-live="polite"></div>
+          <div id="pr-member-preview" class="pr-person-card" aria-live="polite"></div>
+        </div>
+
+        <div id="pr-suggestions" class="pr-suggestions" style="grid-column: 1 / -1"></div>
+
+        <div class="pr-link-grid__actions">
+          <button type="submit" id="pr-link-submit" class="pr-btn-link" disabled>
+            <span aria-hidden="true">🔗</span> Confirmar vínculo
+          </button>
+        </div>
+      </form>
+
+      <aside class="pr-tip" role="note">
+        <strong>Dica:</strong> famílias devem usar «Criar conta» no login. Após o vínculo, o responsável acessa
+        <strong>/pais/</strong> com o mesmo e-mail e vê agenda, financeiro e comunicados do filho.
+      </aside>
+    </div>
+    {% elif not parent_accounts %}
+    <p class="text-amber-800 text-sm mt-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+      Nenhum responsável cadastrado neste clube. Peça à família criar conta em «Criar conta» no login.
+    </p>
+    {% else %}
+    <p class="text-emerald-800 text-sm mt-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+      Todos os desbravadores já têm responsável vinculado ou não há membros cadastrados.
+    </p>
+    {% endif %}
+  </section>
+  {% else %}
+  <p class="text-sm text-slate-600 mb-4">Seu cargo pode ver a lista; vínculos são feitos pelo diretor ou pela secretaria.</p>
+  {% endif %}
+
+  {% if unlinked_cards %}
+  <section class="pr-card" aria-labelledby="pr-unlinked-title">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <h2 id="pr-unlinked-title" class="pr-card__title" style="margin:0">Desbravadores sem responsável</h2>
+      {% if unlinked_cards|length > 6 %}
+      <span class="text-xs font-semibold text-slate-500">Ver todos ({{ unlinked_cards|length }})</span>
+      {% endif %}
+    </div>
+    <div class="pr-unlinked-scroll">
+      {% for card in unlinked_cards[:12] %}
+      <button
+        type="button"
+        class="pr-unlinked-card"
+        data-member-id="{{ card.id }}"
+        data-member-name="{{ card.full_name }}"
+        data-member-unit="{{ card.unit or '' }}"
+        data-member-age="{{ card.age or '' }}"
+        data-member-initials="{{ card.initials }}"
+        title="Selecionar para vínculo"
+      >
+        <div class="pr-avatar">{{ card.initials }}</div>
+        <p style="margin:0;font-weight:700;font-size:0.82rem;color:#0d1b3e">{{ card.full_name }}</p>
+        <p style="margin:0.2rem 0;font-size:0.72rem;color:#64748b">
+          {% if card.unit %}{{ card.unit }}{% endif %}{% if card.age %} · {{ card.age }} anos{% endif %}
+        </p>
+        <span class="pr-badge pr-badge--red" style="margin-top:0.35rem">Sem responsável</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="mt-2" aria-labelledby="pr-table-title">
+    <div class="pr-toolbar">
+      <h2 id="pr-table-title" class="pr-card__title" style="margin:0;flex:1">Responsáveis cadastrados</h2>
+      <label class="sr-only" for="pr-table-search">Buscar responsável</label>
+      <div class="pr-search-wrap" style="flex:1;max-width:20rem">
+        <span class="pr-search-icon" aria-hidden="true">🔍</span>
+        <input type="search" id="pr-table-search" class="pr-search-input" placeholder="Buscar nome ou e-mail…" />
+      </div>
+    </div>
+
+    <div class="pr-table-wrap">
+      <table class="pr-table">
+        <thead>
+          <tr>
+            <th scope="col">Responsável</th>
+            <th scope="col">E-mail</th>
+            <th scope="col">Telefone</th>
+            <th scope="col">Filhos</th>
+            <th scope="col">Último acesso</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody id="pr-table-body">
+          {% for row in rows %}
+          {% set p = row.user %}
+          <tr data-search="{{ (p.full_name or '') ~ ' ' ~ (p.email or '') ~ ' ' ~ (row.phone or '') }}">
+            <td>
+              <div class="pr-table-user">
+                <span class="pr-avatar">{{ row.initials }}</span>
+                <span class="font-semibold text-navy-900">{{ p.full_name or '—' }}</span>
+              </div>
+            </td>
+            <td class="text-slate-600">{{ p.email }}</td>
+            <td class="text-slate-600">{{ row.phone or '—' }}</td>
+            <td>
+              {% if row.n_children %}
+              <span class="pr-badge pr-badge--green">{{ row.n_children }} filho{{ 's' if row.n_children != 1 else '' }}</span>
+              {% else %}
+              <span class="pr-badge pr-badge--amber">Aguardando</span>
+              {% endif %}
+            </td>
+            <td class="text-slate-500 text-xs whitespace-nowrap">
+              {% if row.last_seen %}
+              {{ row.last_seen|fmt_date('%d/%m/%Y') }} {{ row.last_seen|fmt_time('%H:%M') }}
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <td>
+              {% if row.status == 'ativo' %}
+              <span class="pr-badge pr-badge--green">Ativo</span>
+              {% else %}
+              <span class="pr-badge pr-badge--amber">Pendente</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="pr-actions">
+                {% if admin_panel.can_manage_member_links %}
+                <a
+                  href="{{ url_for('admin.parent_detail', user_id=p.id, **admin_nav_kw) }}"
+                  class="pr-icon-btn"
+                  title="Gerenciar vínculos"
+                  aria-label="Gerenciar {{ p.full_name or p.email }}"
+                >👁</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="pr-empty">
+              Nenhum responsável cadastrado neste clube.<br />
+              <span class="text-xs mt-2 inline-block">Famílias devem usar «Criar conta» na tela de login.</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% if link_history %}
+  <section class="pr-card pr-history" aria-labelledby="pr-history-title">
+    <h2 id="pr-history-title" class="pr-card__title">Histórico de vínculos</h2>
+    <p class="pr-card__sub">Registro das últimas ações de vínculo e desvínculo no clube.</p>
+    {% for h in link_history %}
+    <div class="pr-history-item">
+      <span>
+        {% if h.action == 'link' %}🔗 Vínculo{% else %}↩ Desvínculo{% endif %}
+        — <strong>{{ h.member_name_snapshot or 'Desbravador' }}</strong>
+        {% if h.parent_name_snapshot %}↔ {{ h.parent_name_snapshot }}{% endif %}
+      </span>
+      {% if h.link_type %}
+      <span class="pr-badge pr-badge--slate">{{ link_type_labels.get(h.link_type, h.link_type) }}</span>
+      {% endif %}
+      <span class="text-slate-500">{{ h.created_at|fmt_date('%d/%m/%Y') }} {{ h.created_at|fmt_time('%H:%M') }}</span>
+      {% if h.performed_by %}
+      <span class="text-slate-500">por {{ h.performed_by.full_name or h.performed_by.email }}</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+
+<div id="pr-toast-root" class="pr-toast-root" aria-live="polite"></div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/parents-premium.js') }}" defer></script>
+{% endblock %}

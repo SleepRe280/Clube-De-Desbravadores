@@ -1,0 +1,303 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Financeiro{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/finance-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set s = pf.summary %}
+<div id="fn-parent-app" class="fn-parent-page pp-animate-in">
+  <header class="fn-parent-head">
+    <h1>Financeiro</h1>
+    <p>Acompanhe suas mensalidades, pagamentos e histórico financeiro.</p>
+  </header>
+
+  {% if not pf.children %}
+  <div class="fn-card fn-empty fn-parent-empty">
+    <svg class="fn-parent-empty__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <p>Nenhum desbravador vinculado. Peça à diretoria para associar seu filho à sua conta.</p>
+  </div>
+  {% else %}
+
+  {# —— KPI Cards —— #}
+  <section class="fn-parent-hero" aria-label="Resumo financeiro">
+    <article class="fn-kpi fn-kpi--parent">
+      <span class="fn-kpi__icon fn-kpi__icon--danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </span>
+      <p class="fn-kpi__label">Total em aberto</p>
+      <p class="fn-kpi__value">{{ s.open_total_label }}</p>
+      <p class="fn-kpi__meta">{{ s.open_count }} mensalidade(s) pendente(s)</p>
+    </article>
+    <article class="fn-kpi fn-kpi--parent">
+      <span class="fn-kpi__icon fn-kpi__icon--success" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <p class="fn-kpi__label">Último pagamento</p>
+      {% if s.last_payment %}
+      <p class="fn-kpi__value">{{ s.last_payment.amount_label }}</p>
+      <p class="fn-kpi__meta">Pago em {{ s.last_payment.paid_label }}</p>
+      {% else %}
+      <p class="fn-kpi__value">—</p>
+      <p class="fn-kpi__meta">Nenhum pagamento registrado</p>
+      {% endif %}
+    </article>
+    <article class="fn-kpi fn-kpi--parent">
+      <span class="fn-kpi__icon fn-kpi__icon--info" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+      </span>
+      <p class="fn-kpi__label">Total pago este ano</p>
+      <p class="fn-kpi__value">{{ s.year_paid_total_label }}</p>
+      <p class="fn-kpi__meta">{{ s.year }}</p>
+    </article>
+    <article class="fn-kpi fn-kpi--parent">
+      <span class="fn-kpi__icon fn-kpi__icon--warning" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </span>
+      <p class="fn-kpi__label">Próximo vencimento</p>
+      {% if s.next_due %}
+      <p class="fn-kpi__value">{{ s.next_due.due_label }}</p>
+      <p class="fn-kpi__meta">{{ s.next_due.days_label }}</p>
+      {% else %}
+      <p class="fn-kpi__value">—</p>
+      <p class="fn-kpi__meta">Nenhuma cobrança pendente</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <div class="fn-parent-grid">
+    {# —— Coluna esquerda: cobranças + PIX —— #}
+    <div class="fn-parent-col">
+      <div class="fn-card fn-parent-charges">
+        <div class="fn-card__head">
+          <h2 class="fn-card__title">Pagamentos e cobranças</h2>
+        </div>
+
+        <nav class="fn-parent-tabs" role="tablist" aria-label="Filtrar cobranças">
+          <button type="button" class="fn-parent-tab is-active" role="tab" aria-selected="true" data-tab="open" id="fn-tab-open">
+            Em aberto <span class="fn-parent-tab__count">({{ pf.counts.pending }})</span>
+          </button>
+          <button type="button" class="fn-parent-tab" role="tab" aria-selected="false" data-tab="paid" id="fn-tab-paid">
+            Pagos <span class="fn-parent-tab__count">({{ pf.counts.paid }})</span>
+          </button>
+          <button type="button" class="fn-parent-tab" role="tab" aria-selected="false" data-tab="all" id="fn-tab-all">
+            Histórico completo <span class="fn-parent-tab__count">({{ pf.counts.total }})</span>
+          </button>
+        </nav>
+
+        {# Tab: Em aberto #}
+        <div class="fn-parent-tabpanel is-active" role="tabpanel" aria-labelledby="fn-tab-open" data-panel="open">
+          {% if pf.fees_open %}
+          <div class="fn-parent-charge-list">
+            {% for f in pf.fees_open %}
+            <article class="fn-parent-charge{% if f.is_overdue %} fn-parent-charge--overdue{% endif %}">
+              <div class="fn-parent-charge__date" aria-hidden="true">
+                <span class="fn-parent-charge__day">{{ '%02d'|format(f.due_day) }}</span>
+                <span class="fn-parent-charge__month">{{ f.due_month_abbr }}</span>
+              </div>
+              <div class="fn-parent-charge__body">
+                <p class="fn-parent-charge__child">{{ pf.by_member[f.member_id].full_name }}</p>
+                <h3 class="fn-parent-charge__title">{{ f.title }}{% if f.installment %} · {{ f.installment }}{% endif %}</h3>
+                <p class="fn-parent-charge__due">Vencimento: {{ f.due_label }}</p>
+                {% if f.notes %}<p class="fn-parent-charge__note">{{ f.notes }}</p>{% endif %}
+
+                {% if f.proof_status == 'pendente' %}
+                <p class="fn-parent-proof-msg fn-parent-proof-msg--wait">Comprovante em análise pela diretoria…</p>
+                {% elif f.proof_approved_awaiting_payment %}
+                <p class="fn-parent-proof-msg fn-parent-proof-msg--wait">Comprovante validado — aguardando confirmação de pagamento.</p>
+                {% elif f.proof_status == 'revisao' %}
+                <p class="fn-parent-proof-msg fn-parent-proof-msg--rev">A diretoria solicitou um novo comprovante.</p>
+                {% elif f.proof_status == 'rejeitado' %}
+                <p class="fn-parent-proof-msg fn-parent-proof-msg--no">Comprovante não validado. Envie novamente.</p>
+                {% endif %}
+
+                {% if f.can_upload_proof %}
+                <form method="post" action="{{ url_for('parent.parent_finance_proof', fee_id=f.id) }}" enctype="multipart/form-data" class="fn-parent-proof-form">
+                  <label class="fn-parent-proof-label">Enviar comprovante de pagamento</label>
+                  <input type="file" name="proof_file" accept="image/*,application/pdf" required class="fn-parent-file" />
+                  <textarea name="note" rows="2" placeholder="Observação (opcional)" class="fn-parent-note"></textarea>
+                  <button type="submit" class="fn-btn fn-btn--gold fn-parent-proof-submit">Enviar comprovante</button>
+                </form>
+                {% endif %}
+              </div>
+              <div class="fn-parent-charge__side">
+                <p class="fn-parent-charge__amount{% if f.is_overdue %} fn-parent-charge__amount--overdue{% endif %}">{{ f.amount_label }}</p>
+                <span class="fn-badge {{ f.status_css }}">{{ f.status_label }}</span>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="fn-parent-tab-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p>Nenhuma cobrança em aberto. Você está em dia! 🎉</p>
+          </div>
+          {% endif %}
+        </div>
+
+        {# Tab: Pagos #}
+        <div class="fn-parent-tabpanel" role="tabpanel" aria-labelledby="fn-tab-paid" data-panel="paid" hidden>
+          {% if pf.fees_paid %}
+          <div class="fn-parent-charge-list">
+            {% for f in pf.fees_paid %}
+            <article class="fn-parent-charge fn-parent-charge--paid">
+              <div class="fn-parent-charge__date fn-parent-charge__date--paid" aria-hidden="true">
+                <span class="fn-parent-charge__day">{{ '%02d'|format(f.due_day) }}</span>
+                <span class="fn-parent-charge__month">{{ f.due_month_abbr }}</span>
+              </div>
+              <div class="fn-parent-charge__body">
+                <p class="fn-parent-charge__child">{{ pf.by_member[f.member_id].full_name }}</p>
+                <h3 class="fn-parent-charge__title">{{ f.title }}{% if f.installment %} · {{ f.installment }}{% endif %}</h3>
+                <p class="fn-parent-charge__due">Pago em {{ f.paid_label }}</p>
+              </div>
+              <div class="fn-parent-charge__side">
+                <p class="fn-parent-charge__amount fn-parent-charge__amount--paid">{{ f.amount_label }}</p>
+                <span class="fn-badge fn-badge--paid">Pago</span>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="fn-parent-tab-empty">
+            <p>Nenhum pagamento registrado ainda.</p>
+          </div>
+          {% endif %}
+        </div>
+
+        {# Tab: Histórico completo #}
+        <div class="fn-parent-tabpanel" role="tabpanel" aria-labelledby="fn-tab-all" data-panel="all" hidden>
+          {% if pf.fees_history %}
+          <div class="fn-parent-charge-list">
+            {% for f in pf.fees_history %}
+            <article class="fn-parent-charge{% if f.is_overdue %} fn-parent-charge--overdue{% elif f.status == 'pago' %} fn-parent-charge--paid{% endif %}">
+              <div class="fn-parent-charge__date{% if f.status == 'pago' %} fn-parent-charge__date--paid{% elif f.is_overdue %} fn-parent-charge__date--overdue{% endif %}" aria-hidden="true">
+                <span class="fn-parent-charge__day">{{ '%02d'|format(f.due_day) }}</span>
+                <span class="fn-parent-charge__month">{{ f.due_month_abbr }}</span>
+              </div>
+              <div class="fn-parent-charge__body">
+                <p class="fn-parent-charge__child">{{ pf.by_member[f.member_id].full_name }}</p>
+                <h3 class="fn-parent-charge__title">{{ f.title }}{% if f.installment %} · {{ f.installment }}{% endif %}</h3>
+                <p class="fn-parent-charge__due">
+                  {% if f.status == 'pago' %}Pago em {{ f.paid_label }}{% else %}Vencimento: {{ f.due_label }}{% endif %}
+                </p>
+              </div>
+              <div class="fn-parent-charge__side">
+                <p class="fn-parent-charge__amount{% if f.status == 'pago' %} fn-parent-charge__amount--paid{% elif f.is_overdue %} fn-parent-charge__amount--overdue{% endif %}">{{ f.amount_label }}</p>
+                <span class="fn-badge {{ f.status_css }}">{{ f.status_label }}</span>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="fn-parent-tab-empty">
+            <p>Não há cobranças registradas.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# —— PIX —— #}
+      <section class="fn-card fn-parent-pix" aria-label="Pagamento via PIX">
+        <div class="fn-parent-pix__head">
+          <span class="fn-parent-pix__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 9h6M9 13h4"/></svg>
+          </span>
+          <div>
+            <h2 class="fn-card__title">Pagamento via PIX</h2>
+            <p class="fn-parent-pix__hint">Use a chave PIX do clube para realizar seus pagamentos de forma rápida e segura.</p>
+          </div>
+        </div>
+
+        {% if pf.pix.pix_key %}
+        <div class="fn-parent-pix__field">
+          <label class="fn-parent-pix__label" for="fn-parent-pix-key">Chave PIX do clube</label>
+          <div class="fn-parent-pix__input-wrap">
+            <input type="text" id="fn-parent-pix-key" class="fn-parent-pix__input" value="{{ pf.pix.pix_key }}" readonly />
+            <button type="button" class="fn-parent-pix__copy" id="fn-parent-copy-pix" title="Copiar chave PIX" aria-label="Copiar chave PIX">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+        {% if pf.pix.pix_payload %}
+        <script id="fn-parent-pix-payload" type="application/json">{{ pf.pix.pix_payload | tojson }}</script>
+        {% endif %}
+        {% if pf.pix.pix_qr_uri %}
+        <div class="fn-pix-qr"><img src="{{ pf.pix.pix_qr_uri }}" alt="QR Code PIX" width="140" height="140" /></div>
+        {% endif %}
+        <p class="fn-parent-pix__note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Ao realizar o pagamento, ele será identificado automaticamente. A chave é sincronizada com a área financeira da diretoria.
+        </p>
+        {% else %}
+        <p class="fn-parent-pix__empty">A diretoria ainda não cadastrou a chave PIX do clube. Entre em contato com a tesouraria.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    {# —— Coluna direita: extrato —— #}
+    <aside class="fn-parent-col fn-parent-col--aside">
+      <div class="fn-card fn-parent-statement">
+        <div class="fn-card__head">
+          <h2 class="fn-card__title">Histórico de pagamentos</h2>
+        </div>
+
+        {% if pf.fees_paid %}
+        <div class="fn-parent-statement__list">
+          {% for f in pf.fees_paid %}
+          <article class="fn-parent-statement__item">
+            <span class="fn-parent-statement__check" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </span>
+            <div class="fn-parent-statement__date-badge" aria-hidden="true">
+              <span>{{ '%02d'|format(f.due_day) }}</span>
+              <span>{{ f.due_month_abbr }}</span>
+            </div>
+            <div class="fn-parent-statement__body">
+              <p class="fn-parent-statement__title">{{ f.title }}{% if f.installment %} · {{ f.installment }}{% endif %}</p>
+              <p class="fn-parent-statement__sub">Pago em {{ f.paid_label }}</p>
+            </div>
+            <div class="fn-parent-statement__tail">
+              <p class="fn-parent-statement__amount">{{ f.amount_label }}</p>
+              <span class="fn-badge fn-badge--paid">Pago</span>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+
+        <div class="fn-parent-statement__summary">
+          <div>
+            <p class="fn-parent-statement__summary-label">Total pago este ano</p>
+            <p class="fn-parent-statement__summary-meta">{{ s.year_paid_count }} pagamento(s) realizado(s)</p>
+          </div>
+          <p class="fn-parent-statement__summary-value">{{ s.year_paid_total_label }}</p>
+        </div>
+        {% else %}
+        <div class="fn-parent-tab-empty fn-parent-tab-empty--compact">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <p>Nenhum pagamento registrado ainda.</p>
+        </div>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  {# —— Banner motivacional —— #}
+  <section class="fn-parent-banner" aria-label="Dica financeira">
+    <span class="fn-parent-banner__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    </span>
+    <div>
+      <h3 class="fn-parent-banner__title">Fique em dia com suas mensalidades</h3>
+      <p class="fn-parent-banner__text">Manter os pagamentos em dia ajuda o clube a continuar oferecendo atividades, eventos e recursos para seus desbravadores. Obrigado pelo apoio!</p>
+    </div>
+  </section>
+
+  {% endif %}
+</div>
+<div id="fn-parent-toast" class="fn-parent-toast" role="status" aria-live="polite" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/parent-finance-premium.js') }}"></script>
+{% endblock %}

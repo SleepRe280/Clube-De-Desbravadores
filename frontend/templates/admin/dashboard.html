@@ -1,0 +1,196 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+{% set ap = admin_portal|default({}) %}
+{% block header_sub %}
+{% if ap.n_events_today %}Hoje o clube tem {{ ap.n_events_today }} atividade{{ 's' if ap.n_events_today != 1 else '' }} na agenda.{% else %}Que ótimo ter você aqui — vamos fazer a diferença juntos!{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 ap-animate-in">
+  <section class="ap-kpi-grid">
+    <article class="ap-kpi ap-kpi--light ap-kpi--membros">
+      <div class="ap-kpi__top"><span class="ap-kpi__badge ap-kpi__badge--violet">👥</span><p class="ap-kpi__label">Membros ativos</p></div>
+      <p class="ap-kpi__value">{{ dash.n_members }}</p>
+      <p class="ap-kpi__meta">+12 este mês</p>
+      <svg class="ap-kpi__spark" viewBox="0 0 120 24" aria-hidden="true"><path d="M2 20 L20 16 L34 18 L50 10 L66 12 L82 7 L100 9 L118 4" /></svg>
+    </article>
+    <article class="ap-kpi ap-kpi--light ap-kpi--presenca">
+      <div class="ap-kpi__top"><span class="ap-kpi__badge ap-kpi__badge--green">✓</span><p class="ap-kpi__label">Presença da semana</p></div>
+      <p class="ap-kpi__value">{{ ap.week_attendance|default(0) }}%</p>
+      <p class="ap-kpi__meta">Muito bom!</p>
+      <svg class="ap-kpi__spark" viewBox="0 0 120 24" aria-hidden="true"><path d="M2 18 L18 17 L34 13 L50 14 L66 8 L82 11 L100 6 L118 5" /></svg>
+    </article>
+    <article class="ap-kpi ap-kpi--light ap-kpi--eventos">
+      <div class="ap-kpi__top"><span class="ap-kpi__badge ap-kpi__badge--amber">📅</span><p class="ap-kpi__label">Próximos eventos</p></div>
+      <p class="ap-kpi__value">{{ dash.n_upcoming }}</p>
+      <p class="ap-kpi__meta">Esta semana</p>
+      <svg class="ap-kpi__spark" viewBox="0 0 120 24" aria-hidden="true"><path d="M2 19 L18 17 L34 16 L50 12 L66 13 L82 10 L100 7 L118 6" /></svg>
+    </article>
+    <article class="ap-kpi ap-kpi--light ap-kpi--avisos">
+      <div class="ap-kpi__top"><span class="ap-kpi__badge ap-kpi__badge--blue">📢</span><p class="ap-kpi__label">Avisos pendentes</p></div>
+      <p class="ap-kpi__value">{{ dash.n_posts }}</p>
+      <p class="ap-kpi__meta">Para publicar</p>
+      <svg class="ap-kpi__spark" viewBox="0 0 120 24" aria-hidden="true"><path d="M2 20 L18 18 L34 15 L50 15 L66 11 L82 12 L100 8 L118 9" /></svg>
+    </article>
+  </section>
+
+  {# Middle row: 2 columns (Resumo + Calendário) #}
+  <section class="grid gap-6 xl:grid-cols-12">
+    <div class="xl:col-span-8">
+      <div class="ap-card">
+        <h2 class="ap-card__title">Resumo do clube hoje</h2>
+        <div class="ap-today-grid">
+          {% for item in ap.today_summary|default([]) %}
+          <article class="ap-today-item">
+            <span class="ap-today-item__icon">{{ item.icon }}</span>
+            <div>
+              <p class="text-[11px] text-slate-500 font-semibold">{{ item.label }}</p>
+              <p class="ap-today-item__value">{{ item.value }}</p>
+              <p class="text-[10px] text-slate-400">{{ item.hint }}</p>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="xl:col-span-4">
+      <div class="ap-card">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="ap-card__title mb-0">Calendário rápido</h2>
+          <a href="{{ url_for('admin.agenda_list', **admin_nav_kw) }}" class="text-xs font-bold text-sky-700 hover:underline">Ver calendário completo</a>
+        </div>
+        <div class="ap-calendar-week" aria-label="Semana do calendário">
+          {% for ev in dash.upcoming_events[:7] %}
+          <button type="button" class="ap-calendar-week__day {% if loop.first %}is-active{% endif %}">
+            <span>{{ ev.event_date|fmt_date('%a')|upper }}</span>
+            <strong>{{ ev.event_date|fmt_date('%d') }}</strong>
+          </button>
+          {% else %}
+          <p class="text-sm text-slate-500">Sem eventos próximos.</p>
+          {% endfor %}
+        </div>
+        <div class="ap-calendar-agenda">
+          {% for ev in dash.upcoming_events[:3] %}
+          <article class="ap-calendar-agenda__item">
+            <span class="ap-calendar-agenda__time">{% if ev.event_time %}{{ ev.event_time|fmt_time }}{% else %}--:--{% endif %}</span>
+            <div class="min-w-0">
+              <p class="ap-calendar-agenda__title">{{ ev.title }}</p>
+              <p class="ap-calendar-agenda__meta">{{ ev.location or 'Local a definir' }}</p>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# Bottom row: 3 columns (Feed + Próximos eventos + Widgets) #}
+  <section class="grid gap-6 xl:grid-cols-12">
+    <div class="xl:col-span-5">
+      <div class="ap-card">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <h2 class="ap-card__title mb-0">Movimentações recentes</h2>
+          <a href="{{ nav.activities|default('/admin/atividades') }}" class="text-xs font-bold text-sky-700 hover:underline">Ver todas</a>
+        </div>
+        <div>
+          {% for item in (ap.activity_feed|default([]))[:6] %}
+          <article class="ap-feed-item">
+            <div class="ap-feed-item__avatar ap-feed-item__avatar--{{ item.color }}">{{ item.icon }}</div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-bold text-navy-900">{{ item.title }}</p>
+              <p class="text-xs text-slate-500">{{ item.subtitle }}</p>
+            </div>
+            <span class="text-[11px] text-slate-400 shrink-0">{{ item.time }}</span>
+          </article>
+          {% else %}
+          <p class="text-sm text-slate-500 py-6 text-center">Nenhuma movimentação recente ainda.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="xl:col-span-4">
+      <div class="ap-card">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="ap-card__title mb-0">Próximos eventos</h2>
+          <a href="{{ url_for('admin.agenda_list', **admin_nav_kw) }}" class="text-xs font-bold text-sky-700 hover:underline">Ver todos</a>
+        </div>
+        <div class="ap-upcoming-list">
+          {% for ev in dash.upcoming_events[:3] %}
+          <article class="ap-upcoming-item">
+            <div class="ap-upcoming-date ap-upcoming-date--{{ loop.index }}">
+              <strong>{{ ev.event_date|fmt_date('%d') }}</strong>
+              <span>{{ ev.event_date|fmt_date('%b')|upper }}</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="ap-upcoming-title">{{ ev.title }}</p>
+              <p class="ap-upcoming-meta">
+                {% if ev.event_time %}{{ ev.event_time|fmt_time }}{% else %}Sem horário{% endif %}
+                {% if ev.location %} · {{ ev.location }}{% endif %}
+              </p>
+            </div>
+            <div class="ap-upcoming-thumb" aria-hidden="true"></div>
+          </article>
+          {% else %}
+          <p class="text-sm text-slate-500">Nenhum evento futuro.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="xl:col-span-3 space-y-6">
+      {% set presence = (ap.week_attendance|default(0))|int %}
+      <div class="ap-card ap-presence-card">
+        <div class="flex items-center justify-between">
+          <h2 class="ap-card__title mb-0">Presença da semana</h2>
+          <a href="{{ url_for('admin.attendance_overview', **admin_nav_kw) }}" class="text-xs font-bold text-sky-700 hover:underline">Ver relatório</a>
+        </div>
+        <div class="ap-presence-widget mt-4">
+          <div class="ap-presence-gauge" style="--ap-presence: {{ presence }}%">
+            <div class="ap-presence-gauge__center">
+              <strong>{{ presence }}%</strong>
+              <span>{% if presence >= 85 %}Muito bom!{% elif presence >= 70 %}Bom!{% else %}Atenção{% endif %}</span>
+            </div>
+          </div>
+          <div class="ap-presence-widget__meta">
+            <p class="text-xs font-semibold text-slate-500">Meta: 75%</p>
+            <p class="text-xs text-slate-500 mt-1">Continue assim!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ap-card ap-challenge-card">
+        <h2 class="ap-card__title">Desafio da semana 🏆</h2>
+        {% set pts = ap.challenge_points|default(0) %}
+        {% set goal = ap.challenge_goal|default(500) %}
+        <p class="text-sm font-extrabold text-navy-900 mt-1">{{ pts }} / {{ goal }} pontos</p>
+        <div class="ap-progress mt-3"><span style="width: {{ (100 * pts / goal)|int if goal else 0 }}%"></span></div>
+        <p class="text-xs text-slate-500 mt-3">Participe das atividades e ajude sua unidade a vencer.</p>
+        <div class="ap-challenge-trophy" aria-hidden="true">🏆</div>
+      </div>
+    </div>
+  </section>
+
+  {# Quick actions footer row #}
+  <section class="ap-card ap-quick-row">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="ap-card__title mb-0">Ações rápidas</h2>
+    </div>
+    <div class="ap-quick-pills" aria-label="Ações rápidas">
+      {% if admin_panel.can_add_members %}
+      <a href="{{ url_for('admin.member_new', **admin_nav_kw) }}" class="ap-pill"><span class="ap-pill__icon">➕</span>Novo membro</a>
+      {% endif %}
+      {% if admin_panel.can_write_agenda %}
+      <a href="{{ url_for('admin.agenda_new', **admin_nav_kw) }}" class="ap-pill"><span class="ap-pill__icon">📅</span>Criar evento</a>
+      {% endif %}
+      <a href="{{ url_for('admin.attendance_overview', **admin_nav_kw) }}" class="ap-pill"><span class="ap-pill__icon">✓</span>Registrar presença</a>
+      <a href="{{ url_for('admin.post_new', **admin_nav_kw) }}" class="ap-pill"><span class="ap-pill__icon">📢</span>Publicar aviso</a>
+      {% if admin_panel.show_finance_nav %}
+      <a href="{{ url_for('admin.finance_dashboard', **admin_nav_kw) }}" class="ap-pill"><span class="ap-pill__icon">💳</span>Adicionar pagamento</a>
+      {% endif %}
+      <a href="{{ url_for('admin.admin_activities', **admin_nav_kw) }}" class="ap-pill"><span class="ap-pill__icon">📘</span>Criar atividade</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

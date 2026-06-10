@@ -1,0 +1,163 @@
+{# Painel lateral — Novo/Editar evento (drawer premium) #}
+<div id="ag-drawer-root" class="ag-drawer-root" aria-hidden="true">
+  <div class="ag-drawer-backdrop" id="ag-drawer-backdrop" tabindex="-1"></div>
+  <aside id="ag-drawer" class="ag-drawer" role="dialog" aria-labelledby="ag-drawer-title" aria-modal="true">
+    <header class="ag-drawer__head">
+      <div>
+        <h2 id="ag-drawer-title" class="ag-drawer__title">Novo Evento</h2>
+        <nav class="ag-drawer__steps" aria-label="Etapas">
+          <button type="button" class="ag-drawer__step is-active" data-step="0">1 Informações</button>
+          <button type="button" class="ag-drawer__step" data-step="1">2 Participantes</button>
+          <button type="button" class="ag-drawer__step" data-step="2">3 Detalhes</button>
+          <button type="button" class="ag-drawer__step" data-step="3">4 Revisão</button>
+        </nav>
+      </div>
+      <button type="button" class="ag-drawer__close" id="ag-drawer-close" aria-label="Fechar">×</button>
+    </header>
+
+    <form id="ag-drawer-form" method="post" enctype="multipart/form-data" class="ag-drawer__form">
+      {% if admin_nav_kw.clube_id %}<input type="hidden" name="clube_id" value="{{ admin_nav_kw.clube_id }}" />{% endif %}
+      <input type="hidden" name="save_action" id="ag-save-action" value="publish" />
+      <input type="hidden" name="meta_json" id="ag-meta-json" value="" />
+      <input type="hidden" name="color_hex" id="ag-color-hex" value="" />
+      <input type="hidden" name="template_id" id="ag-template-id" value="" />
+      <input type="hidden" name="status" id="ag-status-field" value="planejado" />
+      <input type="hidden" name="category" id="ag-category-field" value="reuniao" />
+
+      <div class="ag-drawer__scroll">
+        <section class="ag-drawer-pane is-active" data-pane="0">
+          <div class="ag-drawer-section">
+            <label class="ag-drawer-label" for="ag-f-title">Nome do evento *</label>
+            <input class="ag-drawer-input" name="title" id="ag-f-title" required maxlength="200" placeholder="Ex.: Acampamento de Primavera" />
+          </div>
+
+          <div class="ag-drawer-section">
+            <label class="ag-drawer-label" for="ag-f-body">Descrição <span class="ag-drawer-optional">(opcional)</span></label>
+            <textarea class="ag-drawer-input ag-drawer-textarea" name="body" id="ag-f-body" rows="3" maxlength="500" placeholder="Detalhes para a diretoria e famílias…"></textarea>
+            <span class="ag-drawer-hint"><span id="ag-body-count">0</span>/500</span>
+          </div>
+
+          <div class="ag-drawer-section">
+            <p class="ag-drawer-label">Criar baseado em template</p>
+            <div class="ag-template-row" id="ag-template-row"></div>
+          </div>
+
+          <div class="ag-drawer-section">
+            <p class="ag-drawer-label">Tipo de evento</p>
+            <div class="ag-type-grid" id="ag-type-grid"></div>
+          </div>
+
+          <div class="ag-drawer-section">
+            <p class="ag-drawer-label">Cor do evento</p>
+            <div class="ag-color-dots" id="ag-color-dots"></div>
+          </div>
+
+          <div class="ag-drawer-section ag-datetime-grid">
+            <div>
+              <label class="ag-drawer-label" for="ag-f-start-date">Data início</label>
+              <input type="date" class="ag-drawer-input" name="event_date" id="ag-f-start-date" required />
+            </div>
+            <div>
+              <label class="ag-drawer-label" for="ag-f-start-time">Hora início</label>
+              <input type="time" class="ag-drawer-input" name="event_time" id="ag-f-start-time" />
+            </div>
+            <div>
+              <label class="ag-drawer-label" for="ag-f-end-date">Data fim</label>
+              <input type="date" class="ag-drawer-input" name="event_end_date" id="ag-f-end-date" />
+            </div>
+            <div>
+              <label class="ag-drawer-label" for="ag-f-end-time">Hora fim</label>
+              <input type="time" class="ag-drawer-input" name="event_end_time" id="ag-f-end-time" />
+            </div>
+          </div>
+          <p class="ag-duration-pill" id="ag-duration-label">Duração: —</p>
+
+          <div class="ag-drawer-section">
+            <label class="ag-drawer-label" for="ag-f-location">Local do evento</label>
+            <div class="ag-location-wrap">
+              <span class="ag-location-icon" aria-hidden="true">📍</span>
+              <input class="ag-drawer-input ag-drawer-input--icon" name="location" id="ag-f-location" maxlength="200" placeholder="Nome ou endereço do local" />
+            </div>
+            <button type="button" class="ag-link-btn" id="ag-location-clear">Alterar local</button>
+          </div>
+        </section>
+
+        <section class="ag-drawer-pane" data-pane="1">
+          <div class="ag-drawer-section">
+            <p class="ag-drawer-label">Quem participa?</p>
+            <div class="ag-chip-select" id="ag-audience-chips">
+              <label class="ag-chip-opt"><input type="checkbox" name="audience" value="clube" /> Clube inteiro</label>
+              <label class="ag-chip-opt"><input type="checkbox" name="audience" value="diretoria" /> Diretoria</label>
+              {% for u in agenda_units %}
+              <label class="ag-chip-opt"><input type="checkbox" name="audience" value="unidade:{{ u }}" /> {{ u }}</label>
+              {% endfor %}
+              <label class="ag-chip-opt"><input type="checkbox" name="audience" value="responsaveis" /> Responsáveis</label>
+            </div>
+          </div>
+
+          <div class="ag-drawer-section">
+            <p class="ag-drawer-label">Responsável pelo evento</p>
+            <div class="ag-leader-grid" id="ag-leader-grid"></div>
+            <input type="hidden" name="responsible_id" id="ag-f-responsible-id" value="" />
+            <input type="hidden" name="responsible_name" id="ag-f-responsible-name" value="" />
+          </div>
+
+          <div class="ag-drawer-section">
+            <label class="ag-drawer-label" for="ag-f-capacity">Limite de vagas</label>
+            <input type="number" class="ag-drawer-input" name="max_capacity" id="ag-f-capacity" min="0" placeholder="Opcional" />
+          </div>
+        </section>
+
+        <section class="ag-drawer-pane" data-pane="2">
+          <div class="ag-drawer-section">
+            <p class="ag-drawer-label">Opções extras</p>
+            <div class="ag-toggle-list">
+              <label class="ag-toggle"><input type="checkbox" name="require_rsvp" value="1" checked /> Exigir confirmação de presença</label>
+              <label class="ag-toggle"><input type="checkbox" name="allow_guests" value="1" /> Permitir convidados</label>
+              <label class="ag-toggle"><input type="checkbox" name="send_notification" value="1" checked /> Enviar notificação automática</label>
+              <label class="ag-toggle"><input type="checkbox" name="qr_checkin" value="1" /> Gerar QR Code de check-in</label>
+              <label class="ag-toggle"><input type="checkbox" name="auto_reminder" value="1" checked /> Criar lembrete automático</label>
+            </div>
+          </div>
+
+          <div class="ag-drawer-section">
+            <label class="ag-drawer-label" for="ag-f-banner">Banner / imagem</label>
+            <input type="file" class="ag-drawer-file" id="ag-f-banner" name="banner" accept="image/png,image/jpeg,image/webp" />
+          </div>
+
+          <div class="ag-drawer-section">
+            <p class="ag-drawer-label">Checklist automático</p>
+            <ul class="ag-checklist" id="ag-checklist"></ul>
+          </div>
+        </section>
+
+        <section class="ag-drawer-pane" data-pane="3">
+          <p class="ag-drawer-label">Revise antes de publicar</p>
+          <div id="ag-review-summary" class="ag-review-card"></div>
+        </section>
+
+        <div class="ag-drawer-preview-wrap">
+          <p class="ag-drawer-label">Pré-visualização</p>
+          <article class="ag-preview-card" id="ag-preview-card">
+            <div class="ag-preview-card__banner" id="ag-preview-banner"></div>
+            <div class="ag-preview-card__body">
+              <span class="ag-preview-badge" id="ag-preview-badge">Em breve</span>
+              <h3 class="ag-preview-title" id="ag-preview-title">Nome do evento</h3>
+              <p class="ag-preview-meta" id="ag-preview-date">—</p>
+              <p class="ag-preview-meta" id="ag-preview-location">📍 Local</p>
+              <div class="ag-preview-countdown" id="ag-preview-countdown"></div>
+              <div class="ag-preview-avatars" id="ag-preview-avatars"></div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <footer class="ag-drawer__foot">
+        <button type="button" class="ag-btn ag-btn--ghost ag-drawer-btn-cancel" id="ag-drawer-cancel">Cancelar</button>
+        <button type="button" class="ag-btn ag-btn--ghost ag-drawer-btn-draft" id="ag-drawer-draft">Salvar rascunho</button>
+        <button type="button" class="ag-btn ag-btn--gold" id="ag-drawer-next">Próximo passo →</button>
+        <button type="submit" class="ag-btn ag-btn--gold hidden" id="ag-drawer-submit">Publicar evento</button>
+      </footer>
+    </form>
+  </aside>
+</div>

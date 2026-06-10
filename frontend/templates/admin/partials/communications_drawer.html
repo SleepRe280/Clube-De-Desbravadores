@@ -1,0 +1,119 @@
+<div id="cm-drawer-root" class="cm-drawer-root" aria-hidden="true">
+  <div class="cm-drawer-backdrop" id="cm-drawer-backdrop" tabindex="-1" data-cm-drawer-close></div>
+  <aside id="cm-drawer" class="cm-drawer" role="dialog" aria-labelledby="cm-drawer-title" aria-modal="true">
+    <header class="cm-drawer__head">
+      <div>
+        <h2 id="cm-drawer-title" class="cm-drawer__title">{% if edit_post %}Editar comunicado{% else %}Novo comunicado{% endif %}</h2>
+        <p class="cm-drawer__sub">Uma mensagem acolhedora para pais e responsáveis 💛</p>
+      </div>
+      <button type="button" class="cm-drawer__close" data-cm-drawer-close aria-label="Fechar">×</button>
+    </header>
+
+    <form
+      id="cm-drawer-form"
+      class="cm-drawer__form"
+      method="post"
+      enctype="multipart/form-data"
+      action="{% if edit_post %}{{ url_for('admin.post_edit', pid=edit_post.id, **admin_nav_kw) }}{% else %}{{ url_for('admin.post_new', **admin_nav_kw) }}{% endif %}"
+    >
+      <input type="hidden" name="form_kind" value="comunicado" />
+      {% if admin_nav_kw.clube_id %}<input type="hidden" name="clube_id" value="{{ admin_nav_kw.clube_id }}" />{% endif %}
+
+      <div class="cm-drawer__scroll">
+        <div class="cm-drawer-section">
+          <label class="cm-drawer-label" for="cm-f-title">Título *</label>
+          <input class="cm-drawer-input" name="title" id="cm-f-title" required maxlength="200" value="{{ edit_post.title if edit_post else '' }}" placeholder="Ex.: Acampamento regional está chegando!" />
+        </div>
+
+        <div class="cm-drawer-section">
+          <label class="cm-drawer-label" for="cm-f-body">Descrição *</label>
+          <textarea class="cm-drawer-textarea" name="body" id="cm-f-body" required rows="5" placeholder="Escreva com carinho — as famílias vão adorar saber dos detalhes…">{{ edit_post.body if edit_post else '' }}</textarea>
+        </div>
+
+        <div class="cm-drawer-section">
+          <label class="cm-drawer-label">Categoria</label>
+          <div class="cm-cat-grid">
+            {% for cat in post_categories %}
+            <label class="cm-cat-opt">
+              <input type="radio" name="category" value="{{ cat }}" {% if (edit_post and edit_post.category == cat) or (not edit_post and cat == 'aviso') %}checked{% endif %} />
+              {{ category_labels[cat] }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="cm-drawer-section" style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem">
+          <div>
+            <label class="cm-drawer-label" for="cm-f-date">Data do evento</label>
+            <input type="date" class="cm-drawer-input" name="event_date" id="cm-f-date" value="{{ edit_post.event_date if edit_post and edit_post.event_date else '' }}" />
+          </div>
+          <div>
+            <label class="cm-drawer-label" for="cm-f-time">Horário</label>
+            <input type="time" class="cm-drawer-input" name="event_time" id="cm-f-time" value="{{ edit_post.event_time if edit_post and edit_post.event_time else '' }}" />
+          </div>
+        </div>
+
+        <div class="cm-drawer-section">
+          <label class="cm-drawer-label" for="cm-f-location">Local</label>
+          <input class="cm-drawer-input" name="location" id="cm-f-location" maxlength="200" value="{{ edit_post.location if edit_post else '' }}" placeholder="Ex.: Sítio das Palmeiras" />
+        </div>
+
+        <div class="cm-drawer-section">
+          <label class="cm-drawer-label">Banner / imagem de capa</label>
+          <input type="file" class="cm-drawer-file" name="image" accept="image/png,image/jpeg,image/webp" />
+          {% if edit_post and edit_post.image_url %}
+          <label class="text-xs mt-2 flex items-center gap-2 opacity-80"><input type="checkbox" name="remove_image" value="1" /> Remover imagem atual</label>
+          {% endif %}
+        </div>
+
+        <div class="cm-drawer-section">
+          <label class="cm-drawer-label">Anexo (PDF, documento)</label>
+          <input type="file" class="cm-drawer-file" name="attachment" accept=".pdf,.doc,.docx,.xls,.xlsx,image/*" />
+          {% if edit_post and edit_post.has_attachment %}
+          <label class="text-xs mt-2 flex items-center gap-2 opacity-80"><input type="checkbox" name="remove_attachment" value="1" /> Remover anexo atual</label>
+          {% endif %}
+        </div>
+
+        <div class="cm-drawer-section">
+          <label class="cm-drawer-label">Público-alvo</label>
+          <div class="cm-chip-grid">
+            {% for code, label in audience_options %}
+            <label class="cm-chip-opt">
+              <input type="checkbox" name="audience" value="{{ code }}" {% if edit_post and code in edit_post.audience %}checked{% elif not edit_post and code == 'clube' %}checked{% endif %} />
+              {{ label }}
+            </label>
+            {% endfor %}
+            {% for u in comms_units|default([]) %}
+            <label class="cm-chip-opt">
+              <input type="checkbox" name="audience" value="unidade:{{ u }}" {% if edit_post and ('unidade:' ~ u) in edit_post.audience %}checked{% endif %} />
+              {{ u }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="cm-drawer-section cm-toggle-row">
+          <label><input type="checkbox" name="is_featured" value="1" {% if edit_post and edit_post.is_featured %}checked{% endif %} /> Destaque no topo</label>
+          <label><input type="checkbox" name="is_urgent" value="1" {% if edit_post and edit_post.is_urgent %}checked{% endif %} /> Aviso urgente</label>
+        </div>
+
+        <div class="cm-drawer-preview">
+          <p class="cm-drawer-label">Pré-visualização em tempo real</p>
+          <article class="cm-preview-card">
+            <div class="cm-preview-card__img" id="cm-preview-img"{% if edit_post %} style="background-image:url('{{ edit_post.image_url }}')"{% endif %}></div>
+            <div class="cm-preview-card__body">
+              <span class="cm-tag cm-tag--aviso" id="cm-preview-tag">Aviso</span>
+              <h4 id="cm-preview-title">Título do comunicado</h4>
+              <p id="cm-preview-body">Uma mensagem acolhedora para as famílias…</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <footer class="cm-drawer__foot">
+        <button type="button" class="cm-drawer-btn cm-drawer-btn--ghost" data-cm-drawer-close>Cancelar</button>
+        <button type="submit" class="cm-drawer-btn cm-drawer-btn--gold">{% if edit_post %}Salvar alterações{% else %}Publicar comunicado{% endif %}</button>
+      </footer>
+    </form>
+  </aside>
+</div>

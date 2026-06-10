@@ -1,0 +1,170 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Agenda — {{ month_label }}{% endblock %}
+{% block header_sub %}Eventos, aventuras e compromissos do clube{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/agenda-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set _nav_q = '' %}
+{% if admin_nav_kw.clube_id %}{% set _nav_q = 'clube_id=' ~ admin_nav_kw.clube_id %}{% endif %}
+{% set can_write = admin_panel.can_write_agenda %}
+
+<div
+  id="agenda-app"
+  class="ag-page ap-animate-in"
+  data-can-write="{{ '1' if can_write else '0' }}"
+  data-year="{{ year }}"
+  data-month="{{ month }}"
+  data-selected="{{ selected_day.isoformat() }}"
+  data-today="{{ today_iso }}"
+  data-view="{{ agenda_view }}"
+  data-base-url="{{ url_for('admin.agenda_list', **admin_nav_kw) }}"
+  data-nav-query="{{ _nav_q }}"
+  data-new-url="{{ url_for('admin.agenda_new', **admin_nav_kw) }}"
+  data-edit-url-tpl="{{ url_for('admin.agenda_edit', eid=999999, **admin_nav_kw) | replace('999999', '__ID__') }}"
+  data-delete-url-tpl="{{ url_for('admin.agenda_delete', eid=999999) | replace('999999', '__ID__') }}"
+  data-is-parent="0"
+>
+  <script id="agenda-events-data" type="application/json">{{ agenda_events_json | safe }}</script>
+
+  <header class="ag-hero">
+    <div class="ag-hero__inner">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-widest text-gold-400/90 mb-1">Agenda do clube</p>
+        <h1 class="ag-hero__greeting">{{ greeting_month }} será cheio de <span>aventuras</span> incríveis 🏕️</h1>
+        <p class="ag-hero__sub">Organize reuniões, acampamentos e atividades. {% if not can_write %}Visualização — alterações pela diretoria.{% else %}Você pode criar e gerenciar eventos.{% endif %}</p>
+        <div class="ag-hero__stats">
+          <span class="ag-stat-pill"><strong>{{ month_stats.total }}</strong> eventos no mês</span>
+          <span class="ag-stat-pill"><strong>{{ month_stats.confirmed }}</strong> confirmados</span>
+          <span class="ag-stat-pill"><strong>{{ month_stats.participants }}</strong> presenças</span>
+        </div>
+      </div>
+      <div class="ag-hero__actions">
+        {% if can_write %}
+        <button type="button" id="ag-btn-new" class="ag-btn ag-btn--gold">+ Novo evento</button>
+        {% endif %}
+        <a href="{{ url_for('admin.agenda_list', year=year, month=month, selected=selected_day.isoformat(), view='month', **admin_nav_kw) }}" class="ag-btn ag-btn--ghost">Ver calendário completo</a>
+      </div>
+    </div>
+  </header>
+
+  {% if agenda_reminder %}
+  <div class="ag-reminder mb-4" role="status">
+    {{ agenda_reminder.icon }} <strong>{{ agenda_reminder.title }}</strong> começa em {{ agenda_reminder.days }} dia(s) — {{ agenda_reminder.date }}
+  </div>
+  {% endif %}
+
+  <div class="ag-layout">
+    <div class="ag-main">
+      <div class="ag-card">
+        <div class="ag-toolbar">
+          <div class="ag-view-tabs">
+            <button type="button" class="ag-view-tab {% if agenda_view == 'month' %}is-active{% endif %}" data-view="month">Mês</button>
+            <button type="button" class="ag-view-tab" data-view="week">Semana</button>
+            <button type="button" class="ag-view-tab" data-view="day">Dia</button>
+          </div>
+          <div class="ag-month-nav">
+            <button type="button" id="ag-prev-month" aria-label="Mês anterior">←</button>
+            <span>{{ month_label }}</span>
+            <button type="button" id="ag-next-month" aria-label="Próximo mês">→</button>
+          </div>
+        </div>
+
+        <div class="ag-filters">
+          <button type="button" class="ag-chip is-active" data-filter="category" data-value="">Todas categorias</button>
+          {% for cid, meta in agenda_categories.items() %}
+          <button type="button" class="ag-chip" data-filter="category" data-value="{{ cid }}" style="--dot: {{ meta.color }}">{{ meta.icon }} {{ meta.label }}</button>
+          {% endfor %}
+          <span class="w-full sm:w-auto"></span>
+          <button type="button" class="ag-chip is-active" data-filter="unit" data-value="">Todas unidades</button>
+          {% for u in agenda_units %}
+          <button type="button" class="ag-chip" data-filter="unit" data-value="{{ u }}">{{ u }}</button>
+          {% endfor %}
+        </div>
+
+        <div id="ag-cal-month" class="ag-cal-wrap">
+          <div class="ag-cal-head">
+            <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>
+          </div>
+          <div id="ag-cal-grid" class="ag-cal-grid"></div>
+        </div>
+
+        <div class="ag-legend">
+          {% for cid, meta in agenda_categories.items() %}
+          <span style="--dot: {{ meta.color }}">{{ meta.label }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="ag-card mt-4">
+        <div class="ag-timeline">
+          <p class="text-xs font-bold uppercase text-slate-400 mb-3 px-1">Timeline do mês</p>
+          <div class="ag-timeline__track">
+            {% for ev in timeline_events %}
+            <div class="ag-timeline__item" data-event-id="{{ ev.id }}" role="button" tabindex="0">
+              <div class="ag-timeline__dot">{{ ev.category_icon }}</div>
+              <p>{{ ev.title[:18] }}{% if ev.title|length > 18 %}…{% endif %}</p>
+              <time>{{ ev.date[8:10] }}/{{ ev.date[5:7] }}{% if ev.time %} · {{ ev.time }}{% endif %}</time>
+            </div>
+            {% else %}
+            <p class="ag-empty w-full">Sem eventos futuros neste mês.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="ag-side-stack">
+      {% if featured_event %}
+      <div class="ag-featured">
+        {% set _feat_bg = featured_event.banner_url or url_for('static', filename='img/login-nature.jpg') %}
+        <div class="ag-featured__bg" style="background-image:url('{{ _feat_bg }}')"></div>
+        <div class="ag-featured__body">
+          <span class="text-[10px] font-bold uppercase text-gold-400">Próxima aventura</span>
+          <h3 class="text-lg font-extrabold mt-1">{{ featured_event.title }}</h3>
+          <p class="text-xs opacity-90 mt-0.5">{{ featured_event.date[8:10] }}/{{ featured_event.date[5:7] }}/{{ featured_event.date[0:4] }}</p>
+          <div id="ag-countdown" class="ag-countdown" data-target="{{ featured_event.countdown_target }}"></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="ag-card ag-day-list">
+        <h3>Eventos do dia — <span id="ag-day-label">{{ selected_day.strftime('%d/%m/%Y') }}</span></h3>
+        <div id="ag-day-events"></div>
+      </div>
+
+      {% if not can_write %}
+      <p class="text-xs text-slate-500 text-center px-2">🔒 Criação e edição de eventos: apenas diretoria autorizada.</p>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+
+<!-- Modal detalhe -->
+<div id="ag-detail-modal" class="ag-modal-backdrop" aria-hidden="true">
+  <div class="ag-modal ag-modal--wide" role="dialog" aria-labelledby="ag-detail-title">
+    <div class="ag-modal__head">
+      <h2 id="ag-detail-title">Detalhes do evento</h2>
+      {% if can_write %}
+      <div id="ag-detail-head-actions" class="ag-detail-head-actions"></div>
+      {% endif %}
+      <button type="button" class="ag-modal__close" data-close-modal="ag-detail-modal" aria-label="Fechar detalhes do evento">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="ag-detail-body" class="ag-modal__body"></div>
+  </div>
+</div>
+
+{% if can_write %}
+<script id="agenda-drawer-config" type="application/json">{{ agenda_drawer_json | default('{}') | safe }}</script>
+{% include "admin/partials/agenda_event_drawer.html" %}
+{% endif %}
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/agenda-event-drawer.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/agenda-premium.js') }}" defer></script>
+{% endblock %}

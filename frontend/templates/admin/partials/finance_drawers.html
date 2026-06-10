@@ -1,0 +1,199 @@
+{# Drawers — lançamento, cobrança, lote mensalidades #}
+<div id="fn-drawer-root" class="fn-drawer-root" aria-hidden="true">
+  <div class="fn-drawer-backdrop" id="fn-drawer-backdrop" tabindex="-1" data-fn-drawer-close></div>
+
+  <aside id="fn-drawer-ledger" class="fn-drawer" role="dialog" aria-labelledby="fn-drawer-ledger-title" aria-modal="true" hidden>
+    <header class="fn-drawer__head">
+      <div>
+        <h2 id="fn-drawer-ledger-title" class="fn-drawer__title">Novo lançamento</h2>
+        <p style="margin:0.25rem 0 0;font-size:0.8rem;color:rgb(255 255 255 / 0.55)">Entrada ou saída no caixa do clube</p>
+      </div>
+      <button type="button" class="fn-drawer__close" data-fn-drawer-close aria-label="Fechar" style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;line-height:1">×</button>
+    </header>
+    <form method="post" action="{{ url_for('admin.finance_ledger_add') }}" enctype="multipart/form-data" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+      <input type="hidden" name="direction" id="fn-ledger-direction" value="income" />
+      <div class="fn-drawer__scroll">
+        <div class="fn-field">
+          <label for="fn-ledger-dir-select">Tipo</label>
+          <select id="fn-ledger-dir-select">
+            <option value="income">Entrada (recebimento)</option>
+            <option value="expense">Saída (despesa)</option>
+          </select>
+        </div>
+        <div class="fn-field">
+          <label for="fn-l-amount">Valor (R$) *</label>
+          <input name="amount" id="fn-l-amount" required placeholder="0,00" />
+        </div>
+        <div class="fn-field">
+          <label for="fn-l-desc">Descrição *</label>
+          <input name="description" id="fn-l-desc" required maxlength="400" placeholder="Ex.: Doação campori" />
+        </div>
+        <div class="fn-field">
+          <label for="fn-l-cat">Categoria</label>
+          <select name="category" id="fn-l-cat">
+            {% for c in fin.categories %}
+            <option value="{{ c }}">{{ fin.category_labels.get(c, c) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="fn-field">
+          <label for="fn-l-date">Data</label>
+          <input type="date" name="occurred_at" id="fn-l-date" value="{{ fin.today.isoformat() }}" />
+        </div>
+        <div class="fn-field">
+          <label for="fn-l-member">Desbravador (opcional)</label>
+          <select name="member_id" id="fn-l-member">
+            <option value="0">— Nenhum —</option>
+            {% for m in fin.members %}
+            <option value="{{ m.id }}">{{ m.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="fn-field">
+          <label for="fn-l-notes">Observações</label>
+          <textarea name="notes" id="fn-l-notes" rows="2" placeholder="Detalhes internos"></textarea>
+        </div>
+        <div class="fn-field">
+          <label for="fn-l-file">Comprovante</label>
+          <input type="file" name="attachment" id="fn-l-file" accept="image/*,application/pdf" />
+        </div>
+      </div>
+      <footer class="fn-drawer__foot">
+        <button type="button" class="fn-btn fn-btn--navy" data-fn-drawer-close>Cancelar</button>
+        <button type="submit" class="fn-btn fn-btn--gold">Registrar</button>
+      </footer>
+    </form>
+  </aside>
+
+  <aside id="fn-drawer-fee" class="fn-drawer" role="dialog" aria-labelledby="fn-drawer-fee-title" aria-modal="true" hidden>
+    <header class="fn-drawer__head">
+      <div>
+        <h2 id="fn-drawer-fee-title" class="fn-drawer__title">Nova cobrança</h2>
+        <p style="margin:0.25rem 0 0;font-size:0.8rem;color:rgb(255 255 255 / 0.55)">Sincroniza automaticamente com o portal das famílias</p>
+      </div>
+      <button type="button" class="fn-drawer__close" data-fn-drawer-close aria-label="Fechar" style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer">×</button>
+    </header>
+    <form id="fn-fee-form" method="post" action="{{ url_for('admin.finance_fee_add') }}" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+      <input type="hidden" name="send_to_all" id="fn-fee-send-all" value="0" />
+      <div class="fn-drawer__scroll">
+        <p class="fn-field" style="margin-bottom:0.35rem"><label>Destinatário</label></p>
+        <div class="fn-target-toggle" role="group" aria-label="Destinatário da cobrança">
+          <button type="button" class="fn-target-btn is-active" data-fn-target="one" id="fn-target-one">Um desbravador</button>
+          <button type="button" class="fn-target-btn" data-fn-target="all" id="fn-target-all">Todos os desbravadores</button>
+        </div>
+        <p class="fn-target-hint" id="fn-target-hint">Selecione quem receberá esta cobrança.</p>
+
+        <div class="fn-field" id="fn-fee-member-wrap">
+          <label for="fn-f-member">Desbravador *</label>
+          <select name="member_id" id="fn-f-member" required>
+            <option value="">Selecione…</option>
+            {% for m in fin.members %}
+            <option value="{{ m.id }}">{{ m.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="fn-field">
+          <label for="fn-f-title">Título *</label>
+          <input name="title" id="fn-f-title" required maxlength="200" value="Mensalidade" />
+        </div>
+        <div class="fn-field">
+          <label for="fn-f-cat">Categoria</label>
+          <select name="category" id="fn-f-cat">
+            {% for c in fin.categories %}
+            <option value="{{ c }}" {% if c == 'mensalidade' %}selected{% endif %}>{{ fin.category_labels.get(c, c) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="fn-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div>
+            <label for="fn-f-amount">Valor (R$) *</label>
+            <input name="amount" id="fn-f-amount" required placeholder="0,00" />
+          </div>
+          <div>
+            <label for="fn-f-due">Vencimento *</label>
+            <input type="date" name="due_date" id="fn-f-due" required value="{{ fin.today.isoformat() }}" />
+          </div>
+        </div>
+        <div class="fn-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div>
+            <label for="fn-f-disc">Desconto (R$)</label>
+            <input name="discount" id="fn-f-disc" placeholder="0,00" />
+          </div>
+          <div>
+            <label for="fn-f-fine">Multa (R$)</label>
+            <input name="fine" id="fn-f-fine" placeholder="0,00" />
+          </div>
+        </div>
+        <div class="fn-field">
+          <label for="fn-f-inst">Parcelas (1–12)</label>
+          <input type="number" name="installments" id="fn-f-inst" min="1" max="12" value="1" />
+        </div>
+        <div class="fn-field">
+          <label for="fn-f-notes">Observações para os pais</label>
+          <textarea name="notes" id="fn-f-notes" rows="2" placeholder="Informações visíveis no portal família"></textarea>
+        </div>
+      </div>
+      <footer class="fn-drawer__foot">
+        <button type="button" class="fn-btn fn-btn--navy" data-fn-drawer-close>Cancelar</button>
+        <button type="submit" class="fn-btn fn-btn--gold" id="fn-fee-submit">Criar cobrança</button>
+      </footer>
+    </form>
+  </aside>
+
+  <aside id="fn-drawer-bulk" class="fn-drawer" role="dialog" aria-labelledby="fn-drawer-bulk-title" aria-modal="true" hidden>
+    <header class="fn-drawer__head">
+      <div>
+        <h2 id="fn-drawer-bulk-title" class="fn-drawer__title">Gerar mensalidades</h2>
+        <p style="margin:0.25rem 0 0;font-size:0.8rem;color:rgb(255 255 255 / 0.55)">Mensalidades ou outros custos para todos os desbravadores ativos</p>
+      </div>
+      <button type="button" class="fn-drawer__close" data-fn-drawer-close aria-label="Fechar" style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer">×</button>
+    </header>
+    <form method="post" action="{{ url_for('admin.finance_fees_bulk') }}" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+      <div class="fn-drawer__scroll">
+        <div class="fn-field">
+          <label for="fn-b-title">Título</label>
+          <input name="title" id="fn-b-title" value="Mensalidade" maxlength="200" />
+        </div>
+        <div class="fn-field">
+          <label for="fn-b-cat">Categoria</label>
+          <select name="category" id="fn-b-cat">
+            {% for c in fin.categories %}
+            <option value="{{ c }}" {% if c == 'mensalidade' %}selected{% endif %}>{{ fin.category_labels.get(c, c) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="fn-field">
+          <label for="fn-b-amount">Valor (R$) *</label>
+          <input name="amount" id="fn-b-amount" required placeholder="0,00" />
+        </div>
+        <div class="fn-field">
+          <label for="fn-b-due">Vencimento *</label>
+          <input type="date" name="due_date" id="fn-b-due" required value="{{ fin.today.isoformat() }}" />
+        </div>
+        <div class="fn-field" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div>
+            <label for="fn-b-disc">Desconto (R$)</label>
+            <input name="discount" id="fn-b-disc" placeholder="0,00" />
+          </div>
+          <div>
+            <label for="fn-b-fine">Multa (R$)</label>
+            <input name="fine" id="fn-b-fine" placeholder="0,00" />
+          </div>
+        </div>
+        <div class="fn-field">
+          <label for="fn-b-inst">Parcelas mensais</label>
+          <input type="number" name="installments" id="fn-b-inst" min="1" max="12" value="1" />
+        </div>
+        <p class="fn-target-hint" style="margin-top:0">Serão geradas cobranças para <strong style="color:#f9bc15">{{ fin.members|length }}</strong> desbravador(es) ativo(s). Aparecem no portal dos responsáveis como pendentes até você confirmar o pagamento.</p>
+      </div>
+      <footer class="fn-drawer__foot">
+        <button type="button" class="fn-btn fn-btn--navy" data-fn-drawer-close>Cancelar</button>
+        <button type="submit" class="fn-btn fn-btn--gold">Gerar para todos</button>
+      </footer>
+    </form>
+  </aside>
+</div>

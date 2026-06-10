@@ -1,0 +1,66 @@
+<div id="act-modal-homework" class="act-modal" aria-hidden="true" role="dialog" aria-labelledby="act-hw-modal-title">
+  <div class="act-modal__box act-modal__box--wide">
+    <header class="act-modal__head">
+      <h3 id="act-hw-modal-title">Nova atividade para casa</h3>
+      <p class="act-modal__sub">Selecione um requisito oficial do caderno — o sistema não cria atividades novas.</p>
+      <button type="button" class="act-modal__close" data-act-close-modal aria-label="Fechar">×</button>
+    </header>
+
+    <form method="post" action="{{ url_for('admin.activities_homework_create', **admin_nav_kw) }}" enctype="multipart/form-data" id="act-hw-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="requirement_id" id="act-hw-req-id" value="" />
+
+      <div class="act-hw-step">
+        <label class="act-hw-label">1. Escolha a classe</label>
+        <div class="act-hw-class-pick" id="act-hw-class-pick">
+          {% if act %}{% for ct in act.class_tabs %}
+          <button type="button" class="act-hw-class-btn" data-class-slug="{{ ct.slug }}" style="--act-class-color: {{ ct.color_hex }}">
+            <span class="act-hw-class-btn__icon">{{ ct.icon }}</span>
+            <span class="act-hw-class-btn__name">{{ ct.name }}</span>
+          </button>
+          {% endfor %}{% endif %}
+        </div>
+      </div>
+
+      <div class="act-hw-step act-hw-step--reqs" id="act-hw-reqs-wrap" hidden>
+        <label class="act-hw-label">2. Selecione o requisito</label>
+        <div class="act-hw-req-loader" id="act-hw-loader" hidden><span class="act-loader"></span> Carregando requisitos…</div>
+        <div class="act-hw-req-tree" id="act-hw-req-tree"></div>
+      </div>
+
+      <div class="act-hw-step" id="act-hw-target-wrap" hidden>
+        <label class="act-hw-label">3. Destinatários</label>
+        <div class="act-hw-target-tabs">
+          <label class="act-hw-radio"><input type="radio" name="target_mode" value="all" checked /> Toda a classe</label>
+          <label class="act-hw-radio"><input type="radio" name="target_mode" value="units" /> Unidades</label>
+          <label class="act-hw-radio"><input type="radio" name="target_mode" value="members" /> Desbravadores</label>
+        </div>
+        <div class="act-hw-target-panel" id="act-hw-units-panel" hidden>
+          {% if act %}{% for u in act.units %}
+          <label class="act-hw-check"><input type="checkbox" name="target_units" value="{{ u }}" /> {{ u }}</label>
+          {% endfor %}{% endif %}
+        </div>
+        <div class="act-hw-target-panel act-hw-members-scroll" id="act-hw-members-panel" hidden>
+          {% if act %}{% for mo in act.member_options %}
+          <label class="act-hw-check"><input type="checkbox" name="target_member_ids" value="{{ mo.id }}" /> {{ mo.full_name }} <span class="act-hw-unit-tag">{{ mo.unit }}</span></label>
+          {% endfor %}{% endif %}
+        </div>
+      </div>
+
+      <div class="act-hw-step" id="act-hw-details-wrap" hidden>
+        <label class="act-hw-label">4. Prazo e observações</label>
+        <label class="act-modal-field">Prazo</label>
+        <input type="date" name="due_date" />
+        <label class="act-modal-field">Observação para os desbravadores</label>
+        <textarea name="description" rows="2" placeholder="Instruções adicionais (opcional)…"></textarea>
+        <label class="act-modal-field">Anexo de referência (opcional)</label>
+        <input type="file" name="attachment" accept="image/*,video/*,.pdf,.doc,.docx,audio/*" />
+      </div>
+
+      <div class="act-modal__foot" id="act-hw-foot" hidden>
+        <button type="submit" class="act-btn act-btn--gold" id="act-hw-submit" disabled>Publicar atividade</button>
+        <button type="button" class="act-btn act-btn--ghost" data-act-close-modal>Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>

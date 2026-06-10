@@ -1,0 +1,127 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Membros{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/parent-members-premium.css') }}" />
+{% endblock %}
+{% block content %}
+{% set directory = directory|default({'members': [], 'total': 0, 'total_label': '0 desbravadores', 'unit_options': [], 'role_options': []}) %}
+{% set members = directory.members|default([]) %}
+
+<div id="pm-app" class="pm-page">
+  <header class="pm-head">
+    <h1>Membros do Clube</h1>
+    <p>Lista dos desbravadores cadastrados no clube — apenas informações básicas para consulta dos responsáveis.</p>
+  </header>
+
+  <section class="pm-summary" aria-label="Resumo de membros">
+    <div class="pm-summary__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <p class="pm-summary__label">Total de membros</p>
+      <p class="pm-summary__value">{{ directory.total_label }}</p>
+    </div>
+  </section>
+
+  {% if members %}
+  <section class="pm-filters" aria-label="Filtros da listagem">
+    <div class="pm-field pm-field--search">
+      <span class="pm-field__label-spacer" aria-hidden="true">Buscar</span>
+      <label class="sr-only" for="pm-search">Buscar por nome</label>
+      <div class="pm-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+        </svg>
+        <input type="search" id="pm-search" placeholder="Buscar por nome..." autocomplete="off" />
+      </div>
+    </div>
+    <div class="pm-field pm-field--filter">
+      <label for="pm-filter-unit">Filtrar por unidade</label>
+      <select id="pm-filter-unit" class="pm-select">
+        <option value="">Todas as unidades</option>
+        {% for unit in directory.unit_options %}
+        <option value="{{ unit }}">{{ unit }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="pm-field pm-field--filter">
+      <label for="pm-filter-role">Filtrar por cargo</label>
+      <select id="pm-filter-role" class="pm-select">
+        <option value="">Todos os cargos</option>
+        {% for role in directory.role_options %}
+        <option value="{{ role }}">{{ role }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="pm-grid" role="list">
+    {% for m in members %}
+    <article
+      class="pm-card"
+      role="listitem"
+      data-name="{{ m.full_name|lower }}"
+      data-unit="{{ m.unit_name }}"
+      data-role="{{ m.role_label }}"
+    >
+      <div class="pm-card__avatar-wrap">
+        {% if m.photo_url %}
+        <img src="{{ m.photo_url }}" class="pm-card__avatar" alt="" loading="lazy" />
+        {% else %}
+        <div class="pm-card__initial" aria-hidden="true">{{ m.initial }}</div>
+        {% endif %}
+      </div>
+      <p class="pm-card__name">{{ m.full_name }}</p>
+      <div class="pm-card__meta">
+        {% if m.age_years is not none %}
+        <div class="pm-card__row pm-card__row--age">
+          <span class="pm-card__row-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="pm-card__row-text">{{ m.age_years }} anos</span>
+        </div>
+        {% endif %}
+        <div class="pm-card__row pm-card__row--unit">
+          <span class="pm-card__row-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="pm-card__row-text">{{ m.unit_name }}</span>
+        </div>
+        <div class="pm-card__row pm-card__row--role pm-role--{{ m.role_color|default('amber') }}">
+          <span class="pm-card__row-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="pm-card__row-text">{{ m.role_label }}</span>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+
+    <div class="pm-empty pm-empty--initial {% if members %}is-hidden{% endif %}">
+      <strong>Nenhum membro cadastrado</strong>
+      A diretoria ainda não registrou desbravadores no clube.
+    </div>
+
+    <div class="pm-empty pm-empty--filter">
+      <strong>Nenhum resultado encontrado</strong>
+      Tente ajustar a busca ou os filtros selecionados.
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/parent-members-premium.js') }}" defer></script>
+{% endblock %}

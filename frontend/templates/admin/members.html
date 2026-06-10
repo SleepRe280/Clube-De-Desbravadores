@@ -1,0 +1,312 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Membros do Clube{% endblock %}
+{% block header_sub %}Gestão premium de desbravadores — fichas, unidades e gamificação{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/units-premium.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/members-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div id="mb-app" class="mb-page ap-animate-in" data-cards='{{ mb_cards_json|safe }}'>
+  <header class="mb-page-head">
+    <div>
+      <h1>Membros do Clube</h1>
+      <p>Dashboard completo — unidades, progresso, gamificação e fichas premium.</p>
+    </div>
+    <div class="mb-page-head__actions">
+      {% if admin_panel.can_add_members %}
+      <a href="{{ url_for('admin.member_new', **admin_nav_kw) }}" class="mb-btn mb-btn--primary">
+        <span aria-hidden="true">+</span> Cadastrar novo desbravador
+      </a>
+      {% endif %}
+      <a href="{{ nav.units|default('/admin/unidades') }}" class="mb-btn mb-btn--ghost">Unidades</a>
+    </div>
+  </header>
+
+  <section class="mb-kpi-row" aria-label="Indicadores">
+    <article class="mb-kpi mb-kpi--blue">
+      <div class="mb-kpi__icon">👥</div>
+      <p class="mb-kpi__label">Total de membros</p>
+      <p class="mb-kpi__value" data-mb-kpi="total">{{ mb_kpis.total }}</p>
+    </article>
+    <article class="mb-kpi mb-kpi--green">
+      <div class="mb-kpi__icon">✓</div>
+      <p class="mb-kpi__label">Membros ativos</p>
+      <p class="mb-kpi__value" data-mb-kpi="active">{{ mb_kpis.active }}</p>
+      <span class="mb-kpi__spark" aria-hidden="true"></span>
+    </article>
+    <article class="mb-kpi mb-kpi--purple">
+      <div class="mb-kpi__icon">👑</div>
+      <p class="mb-kpi__label">Líderes</p>
+      <p class="mb-kpi__value" data-mb-kpi="leaders">{{ mb_kpis.leaders }}</p>
+    </article>
+    <article class="mb-kpi mb-kpi--amber">
+      <div class="mb-kpi__icon">⚠</div>
+      <p class="mb-kpi__label">Pendentes</p>
+      <p class="mb-kpi__value" data-mb-kpi="pending">{{ mb_kpis.pending }}</p>
+    </article>
+    <article class="mb-kpi mb-kpi--sky">
+      <div class="mb-kpi__icon">🎁</div>
+      <p class="mb-kpi__label">Aniversariantes</p>
+      <p class="mb-kpi__value" data-mb-kpi="birthdays">{{ mb_kpis.birthdays }}</p>
+      <span class="mb-kpi__meta">Próximos 30 dias</span>
+    </article>
+  </section>
+
+  <div class="mb-toolbar">
+    <div class="mb-search">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" id="mb-search" placeholder="Buscar desbravador…" autocomplete="off" />
+    </div>
+    <select class="mb-select" id="mb-filter-unit" aria-label="Unidade">
+      <option value="">Todas as unidades</option>
+      {% for u in mb_units_filter %}
+      <option value="{{ u.name }}">{{ u.name }}</option>
+      {% endfor %}
+    </select>
+    <select class="mb-select" id="mb-filter-class" aria-label="Classe">
+      {% for val, label in mb_class_options %}
+      <option value="{{ val }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select class="mb-select" id="mb-filter-role" aria-label="Cargo">
+      <option value="">Todos os cargos</option>
+      <option value="lider">Líderes / capitães</option>
+      <option value="desbravador">Desbravadores</option>
+    </select>
+    <select class="mb-select" id="mb-filter-status" aria-label="Status">
+      {% for val, label in mb_status_options %}
+      <option value="{{ val }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select class="mb-select" id="mb-sort" aria-label="Ordenar">
+      <option value="name">Nome A–Z</option>
+      <option value="performance">Desempenho</option>
+      <option value="score">Pontuação</option>
+      <option value="frequency">Frequência</option>
+    </select>
+    <div class="mb-view-toggle">
+      <button type="button" class="mb-view-btn is-active" data-mb-view="grid" title="Grade" aria-pressed="true">▦</button>
+      <button type="button" class="mb-view-btn" data-mb-view="list" title="Lista" aria-pressed="false">☰</button>
+    </div>
+  </div>
+
+  <div class="mb-layout">
+    <main class="mb-main">
+      <p class="mb-results-meta" id="mb-results-meta" hidden></p>
+      <div class="mb-grid" id="mb-cards-grid">
+        {% for c in mb_cards %}
+        <article
+          class="mb-card"
+          data-mb-card
+          data-id="{{ c.id }}"
+          data-theme="{{ c.unit_theme }}"
+          data-unit="{{ c.unit_name }}"
+          data-class="{{ c.class_label }}"
+          data-status="{{ c.status }}"
+          data-role="{{ 'lider' if c.is_leader else 'desbravador' }}"
+          data-performance="{{ c.performance }}"
+          data-score="{{ c.metrics.score }}"
+          data-frequency="{{ c.metrics.frequency }}"
+          data-search="{{ c.search_blob }}"
+        >
+          <div class="mb-card__banner" data-theme="{{ c.unit_theme }}">
+            {% if c.unit_detail_url %}
+            <a href="{{ c.unit_detail_url }}" class="mb-card__unit-link" title="Ver unidade">
+            {% endif %}
+            <div class="mb-card__unit-brand">
+              <div class="mb-card__unit-logo">
+                {% if c.unit_logo_url %}
+                <img src="{{ c.unit_logo_url }}" alt="" />
+                {% else %}
+                <span>{{ c.unit_emoji }}</span>
+                {% endif %}
+              </div>
+              <div>
+                <span class="mb-card__unit-label">Unidade</span>
+                <strong class="mb-card__unit-name">{{ c.unit_name }}</strong>
+              </div>
+            </div>
+            {% if c.unit_detail_url %}</a>{% endif %}
+            <button type="button" class="mb-card__star" data-mb-fav="{{ c.id }}" title="Favorito" aria-label="Favorito">★</button>
+          </div>
+
+          <div class="mb-card__body">
+            <div class="mb-card__profile">
+              <div class="mb-card__avatar-wrap" data-theme="{{ c.unit_theme }}">
+                {% if c.photo_url %}
+                <img src="{{ c.photo_url }}" alt="" class="mb-card__avatar" />
+                {% else %}
+                <div class="mb-card__avatar mb-card__avatar--ph">{{ c.initial }}</div>
+                {% endif %}
+                <span class="mb-card__status-dot mb-card__status-dot--{{ c.status }}" title="{{ c.status_label }}"></span>
+              </div>
+              <div class="mb-card__info">
+                <h2 class="mb-card__name">{{ c.full_name }}</h2>
+                <div class="mb-card__badges">
+                  <span class="mb-pill mb-pill--class">{{ c.class_label }}</span>
+                  {% if c.is_leader %}<span class="mb-pill mb-pill--leader">Líder</span>{% endif %}
+                  <span class="mb-pill mb-pill--status">{{ c.status_label }}</span>
+                </div>
+                <ul class="mb-card__meta-list">
+                  {% if c.age_years is not none %}<li><span>🎂</span> {{ c.age_years }} anos</li>{% endif %}
+                  <li><span>📅</span> {{ c.birth_display }}</li>
+                  <li><span>👪</span> {{ c.parent_label }}</li>
+                </ul>
+                <p class="mb-card__role">Patrulha: <strong>{{ c.patrol_label }}</strong> · Cargo: <strong>{{ c.role_label }}</strong></p>
+              </div>
+              <div class="mb-card__level mb-card__level--{{ c.level.tier }}" title="Nível {{ c.level.label }}">
+                <span class="mb-card__level-icon">🏆</span>
+                <span class="mb-card__level-label">{{ c.level.label }}</span>
+              </div>
+            </div>
+
+            <div class="mb-card__progress">
+              <div class="mb-card__progress-head">
+                <span>Progresso geral</span>
+                <strong>{{ c.performance }}%</strong>
+              </div>
+              <div class="mb-progress-bar" data-theme="{{ c.unit_theme }}">
+                <span style="width: {{ c.performance }}%"></span>
+              </div>
+            </div>
+
+            <div class="mb-card__metrics">
+              <div class="mb-metric">
+                <span class="mb-metric__icon mb-metric__icon--violet">🎖</span>
+                <span class="mb-metric__val">{{ c.metrics.specialties_done }}/{{ c.metrics.specialties_target }}</span>
+                <span class="mb-metric__lbl">Especialidades</span>
+              </div>
+              <div class="mb-metric">
+                <span class="mb-metric__icon mb-metric__icon--blue">📘</span>
+                <span class="mb-metric__val">{{ c.metrics.classes_done }}/{{ c.metrics.classes_target }}</span>
+                <span class="mb-metric__lbl">Classes</span>
+              </div>
+              <div class="mb-metric">
+                <span class="mb-metric__icon mb-metric__icon--green">📊</span>
+                <span class="mb-metric__val">{{ c.metrics.frequency }}%</span>
+                <span class="mb-metric__lbl">Frequência</span>
+              </div>
+              <div class="mb-metric">
+                <span class="mb-metric__icon mb-metric__icon--amber">📅</span>
+                <span class="mb-metric__val">{{ c.metrics.events }}</span>
+                <span class="mb-metric__lbl">Eventos</span>
+              </div>
+              <div class="mb-metric">
+                <span class="mb-metric__icon mb-metric__icon--gold">⭐</span>
+                <span class="mb-metric__val">{{ "{:,}".format(c.metrics.score).replace(",", ".") }}</span>
+                <span class="mb-metric__lbl">Pontuação</span>
+              </div>
+            </div>
+          </div>
+
+          <footer class="mb-card__foot">
+            <a href="{{ c.profile_url }}" class="mb-btn mb-btn--primary mb-btn--sm">Ver ficha</a>
+            <a href="{{ c.edit_url }}" class="mb-btn mb-btn--outline mb-btn--sm">✏ Editar</a>
+            {% if admin_panel.can_delete_members %}
+            <details class="mb-card__menu">
+              <summary aria-label="Mais opções">⋯</summary>
+              <form method="post" action="{{ c.delete_url }}" onsubmit="return confirm('Excluir este desbravador?');">
+                {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+                <button type="submit" class="mb-menu-danger">Excluir</button>
+              </form>
+            </details>
+            {% endif %}
+          </footer>
+        </article>
+        {% else %}
+        <div class="mb-empty" id="mb-empty-default">
+          <p class="mb-empty__icon">👥</p>
+          <p>Nenhum desbravador cadastrado ainda.</p>
+          {% if admin_panel.can_add_members %}
+          <a href="{{ url_for('admin.member_new', **admin_nav_kw) }}" class="mb-btn mb-btn--primary">Cadastrar primeiro membro</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mb-empty mb-empty--filter" id="mb-empty-filter" hidden>
+        <p>Nenhum membro corresponde aos filtros.</p>
+        <button type="button" class="mb-btn mb-btn--ghost" id="mb-clear-filters">Limpar filtros</button>
+      </div>
+    </main>
+
+    <aside class="mb-sidebar" aria-label="Painel lateral">
+      <section class="mb-widget">
+        <h3 class="mb-widget__title"><span>🎁</span> Próximos aniversariantes</h3>
+        <ul class="mb-widget-list">
+          {% for b in mb_birthdays %}
+          <li class="mb-widget-item">
+            <div class="mb-widget-avatar">{{ b.initial }}</div>
+            <div>
+              <strong>{{ b.name }}</strong>
+              <span>{{ b.date_label }} · {{ b.when }}</span>
+            </div>
+          </li>
+          {% else %}
+          <li class="mb-widget-empty">Nenhum aniversário nos próximos 30 dias.</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="mb-widget">
+        <h3 class="mb-widget__title"><span>⚠</span> Pendências</h3>
+        <ul class="mb-pending-list">
+          {% for p in mb_pending %}
+          <li class="mb-pending-item mb-pending-item--{{ p.variant }}">
+            <span class="mb-pending-item__icon">{{ p.icon }}</span>
+            <span>{{ p.label }}</span>
+            <strong class="mb-pending-item__count">{{ p.count }}</strong>
+          </li>
+          {% else %}
+          <li class="mb-widget-empty">Nenhuma pendência crítica.</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="mb-widget">
+        <h3 class="mb-widget__title"><span>🕐</span> Últimas atividades</h3>
+        <ul class="mb-timeline">
+          {% for a in mb_activities %}
+          <li class="mb-timeline__item">
+            <span class="mb-timeline__dot">{{ a.icon }}</span>
+            <div>
+              <strong>{{ a.member_name }}</strong>
+              <p>{{ a.title }}</p>
+              <time>{{ a.when }}</time>
+            </div>
+          </li>
+          {% else %}
+          <li class="mb-widget-empty">Sem atividades recentes.</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="mb-widget mb-widget--ranking">
+        <h3 class="mb-widget__title"><span>🏆</span> Ranking das unidades</h3>
+        <ol class="mb-rank-list">
+          {% for r in mb_unit_ranking %}
+          <li class="mb-rank-item" data-theme="{{ r.theme }}">
+            <span class="mb-rank-item__pos">#{{ r.rank }}</span>
+            <div class="mb-rank-item__logo">
+              {% if r.logo_url %}<img src="{{ r.logo_url }}" alt="" />{% else %}{{ r.initials }}{% endif %}
+            </div>
+            <div class="mb-rank-item__info">
+              <strong>{{ r.name }}</strong>
+              <span>{{ "{:,}".format(r.score).replace(",", ".") }} pts</span>
+            </div>
+          </li>
+          {% else %}
+          <li class="mb-widget-empty">Cadastre unidades para ver o ranking.</li>
+          {% endfor %}
+        </ol>
+        <a href="{{ nav.units|default('/admin/unidades') }}" class="mb-widget__link">Ver ranking completo →</a>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/members-premium.js') }}" defer></script>
+{% endblock %}

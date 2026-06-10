@@ -1,0 +1,57 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Perfil — {{ member.full_name }}{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/member-profile.css') }}" />
+{% endblock %}
+{% block content %}
+<div class="mp-admin-bar">
+  <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="ui-btn ui-btn--sm ui-btn--outline">← Membros</a>
+  <a href="{{ url_for('admin.member_edit', id=member.id, **admin_nav_kw) }}" class="ui-btn ui-btn--sm mw-edit-ficha-btn">✏️ Editar informações da ficha</a>
+</div>
+
+{% if admin_panel.can_manage_member_links %}
+<section class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-2">Portal da família (/pais/)</h2>
+  {% set lp = member.parent %}
+  {% if lp %}
+  <p class="mt-3 text-sm text-green-900 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+    <strong>Vinculado:</strong> {{ lp.full_name or 'Sem nome' }} — {{ lp.email }}
+    {% if member.parent_link_type %}
+    <span class="text-green-700">({{ member.parent_link_type|replace('_', ' ')|title }})</span>
+    {% endif %}
+  </p>
+  <div class="mt-4 flex flex-wrap gap-3 items-end">
+    <form method="post" action="{{ url_for('admin.member_parent_link', id=member.id, **admin_nav_kw) }}" class="flex flex-wrap items-end gap-2">
+      <input type="hidden" name="action" value="change_type" />
+      <div>
+        <label class="block text-xs text-slate-500 mb-1">Tipo de vínculo</label>
+        <select name="link_type" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm bg-white">
+          {% for code, label in parent_link_types|default([]) %}
+          <option value="{{ code }}" {% if member.parent_link_type == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="ui-btn ui-btn--sm ui-btn--outline">Atualizar tipo</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.member_parent_link', id=member.id, **admin_nav_kw) }}" onsubmit="return confirm('Remover vínculo com o responsável?');">
+      <input type="hidden" name="action" value="unlink" />
+      <button type="submit" class="ui-btn ui-btn--sm ui-btn--text-danger">Desvincular</button>
+    </form>
+    <a href="{{ url_for('admin.parent_detail', user_id=lp.id, **admin_nav_kw) }}" class="ui-btn ui-btn--sm ui-btn--outline">Gerenciar responsável</a>
+  </div>
+  {% else %}
+  <p class="mt-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+    Nenhum responsável vinculado. O desbravador não aparece no portal /pais/ até a diretoria confirmar o vínculo.
+  </p>
+  <p class="mt-2 text-sm text-slate-600">
+    Vincule em <a href="{{ url_for('admin.parents_list', **admin_nav_kw) }}" class="font-semibold text-blue-600 underline">Responsáveis e vínculos</a>.
+  </p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% include "shared/member_profile_body.html" %}
+{% endblock %}
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/member-profile.js') }}" defer></script>
+{% endblock %}

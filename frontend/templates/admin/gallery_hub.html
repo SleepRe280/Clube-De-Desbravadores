@@ -1,0 +1,216 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Galeria Oficial{% endblock %}
+{% block header_sub %}Memórias e registros visuais do clube{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div
+  id="gl-app"
+  class="gl-page ap-animate-in"
+  data-can-manage="{{ '1' if can_manage_gallery else '0' }}"
+  data-api-bootstrap="{{ url_for('admin.gallery_api_bootstrap', **admin_nav_kw) }}"
+  data-api-upload="{{ url_for('admin.gallery_api_photos_upload', **admin_nav_kw) }}"
+  data-api-albums="{{ url_for('admin.gallery_api_album_create', **admin_nav_kw) }}"
+  data-prefix="{{ config.URL_PREFIX or '' }}"
+>
+  <script id="gl-bootstrap" type="application/json">{{ gallery|tojson }}</script>
+
+  <header class="gl-head">
+    <div class="gl-head__text">
+      <div class="gl-head__icon" aria-hidden="true">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+      <div>
+        <h1>Galeria Oficial</h1>
+        <p>Registros que contam nossa história e guardam nossas melhores memórias.</p>
+      </div>
+    </div>
+    <div class="gl-head__actions">
+      <form class="gl-search" id="gl-search-form" role="search">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="search" name="q" id="gl-search-input" value="{{ search_q|e }}" placeholder="Buscar álbuns, eventos ou tags…" autocomplete="off" />
+      </form>
+      <button type="button" class="gl-btn gl-btn--ghost" id="gl-btn-filters" aria-expanded="false" aria-controls="gl-filters-panel">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        Filtros
+      </button>
+      {% if can_manage_gallery %}
+      <button type="button" class="gl-btn gl-btn--navy" id="gl-btn-new-album">+ Novo Álbum</button>
+      <button type="button" class="gl-btn gl-btn--royal" id="gl-btn-upload">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Upload de fotos
+      </button>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="gl-filters-panel" id="gl-filters-panel" hidden>
+    <nav class="gl-chips" id="gl-chips" aria-label="Filtrar fotos">
+      {% for code, label in gallery.filter_chips %}
+      <a href="{{ url_for('admin.admin_gallery', filtro=code, q=search_q, **admin_nav_kw) }}" class="gl-chip {% if active_filter == code %}is-active{% endif %}" data-filter="{{ code }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+
+  <div class="gl-layout">
+    <div class="gl-main">
+      <section class="gl-hero-wrap" aria-label="Destaques" data-aos="fade-up">
+        <div class="swiper gl-hero-swiper" id="gl-hero-swiper">
+          <div class="swiper-wrapper" id="gl-hero-slides"></div>
+          <button type="button" class="gl-hero-nav gl-hero-nav--prev" aria-label="Anterior"></button>
+          <button type="button" class="gl-hero-nav gl-hero-nav--next" aria-label="Próximo"></button>
+          <div class="swiper-pagination gl-hero-pagination"></div>
+        </div>
+      </section>
+
+      <section class="gl-section" data-aos="fade-up" data-aos-delay="50">
+        <div class="gl-section__head">
+          <h2>Álbuns principais</h2>
+        </div>
+        <div class="gl-albums" id="gl-albums"></div>
+      </section>
+
+      <section class="gl-section" data-aos="fade-up" data-aos-delay="100">
+        <div class="gl-section__head">
+          <h2>Fotos recentes</h2>
+        </div>
+        <div class="gl-masonry" id="gl-masonry">
+          <div class="gl-skeleton-grid" id="gl-skeleton" aria-hidden="true"></div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="gl-aside" data-aos="fade-left">
+      {% if can_manage_gallery %}
+      <div class="gl-aside-card">
+        <h3>Ações rápidas</h3>
+        <ul class="gl-quick">
+          <li><button type="button" data-gl-quick="album"><span>📁</span> Criar novo álbum</button></li>
+          <li><button type="button" data-gl-quick="upload"><span>📤</span> Upload de fotos</button></li>
+          <li><button type="button" data-gl-quick="manage"><span>🖼</span> Gerenciar galeria</button></li>
+          <li><button type="button" data-gl-quick="trash"><span>🗑</span> Lixeira</button></li>
+        </ul>
+      </div>
+      {% endif %}
+      <div class="gl-aside-card">
+        <h3>Atividade recente</h3>
+        <ul class="gl-activity" id="gl-activity"></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+{% if can_manage_gallery %}
+<div class="gl-modal" id="gl-modal-album" aria-hidden="true">
+  <div class="gl-modal__backdrop" data-gl-close></div>
+  <div class="gl-modal__panel" role="dialog" aria-labelledby="gl-modal-album-title">
+    <header class="gl-modal__head">
+      <h2 id="gl-modal-album-title">Novo álbum</h2>
+      <button type="button" class="gl-modal__close" data-gl-close aria-label="Fechar">×</button>
+    </header>
+    <form id="gl-form-album" class="gl-modal__body">
+      <label class="gl-field"><span>Título</span><input type="text" name="title" required maxlength="160" /></label>
+      <label class="gl-field"><span>Descrição</span><textarea name="description" rows="3"></textarea></label>
+      <label class="gl-field"><span>Categoria</span>
+        <select name="category">
+          {% for code, label in gallery.filter_chips %}{% if code %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endif %}{% endfor %}
+          <option value="geral">Geral</option>
+        </select>
+      </label>
+      <label class="gl-field"><span>Data do evento</span><input type="date" name="event_date" /></label>
+      <label class="gl-check"><input type="checkbox" name="featured" /> Destacar no carrossel</label>
+      <footer class="gl-modal__foot">
+        <button type="button" class="gl-btn gl-btn--ghost" data-gl-close>Cancelar</button>
+        <button type="submit" class="gl-btn gl-btn--royal">Salvar álbum</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<div class="gl-modal" id="gl-modal-upload" aria-hidden="true">
+  <div class="gl-modal__backdrop" data-gl-close></div>
+  <div class="gl-modal__panel gl-modal__panel--wide" role="dialog">
+    <header class="gl-modal__head">
+      <h2>Upload de fotos</h2>
+      <button type="button" class="gl-modal__close" data-gl-close>×</button>
+    </header>
+    <div class="gl-modal__body">
+      <div class="gl-upload-zone" id="gl-dropzone">
+        <input type="file" id="gl-file-input" accept="image/png,image/jpeg,image/webp" multiple hidden />
+        <p>Arraste imagens aqui ou <button type="button" class="gl-link" id="gl-pick-files">selecione arquivos</button></p>
+        <p class="gl-upload-hint">PNG, JPG ou WebP — compactação automática ao enviar</p>
+      </div>
+      <div class="gl-upload-preview" id="gl-upload-preview"></div>
+      <div class="gl-upload-progress" id="gl-upload-progress" hidden>
+        <div class="gl-upload-progress__bar"><span id="gl-upload-pct"></span></div>
+        <p id="gl-upload-status">Enviando…</p>
+      </div>
+      <label class="gl-field"><span>Álbum de destino</span>
+        <select id="gl-upload-album"></select>
+      </label>
+      <label class="gl-field"><span>Ou criar álbum</span><input type="text" id="gl-upload-new-album" placeholder="Nome do novo álbum" /></label>
+      <footer class="gl-modal__foot">
+        <button type="button" class="gl-btn gl-btn--ghost" data-gl-close>Cancelar</button>
+        <button type="button" class="gl-btn gl-btn--royal" id="gl-upload-submit" disabled>Enviar fotos</button>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<div class="gl-modal" id="gl-modal-edit-photo" aria-hidden="true">
+  <div class="gl-modal__backdrop" data-gl-close></div>
+  <div class="gl-modal__panel" role="dialog">
+    <header class="gl-modal__head"><h2>Editar informações</h2><button type="button" class="gl-modal__close" data-gl-close>×</button></header>
+    <form id="gl-form-edit-photo" class="gl-modal__body">
+      <input type="hidden" name="photo_id" />
+      <label class="gl-field"><span>Título</span><input type="text" name="title" /></label>
+      <label class="gl-field"><span>Descrição</span><textarea name="description" rows="2"></textarea></label>
+      <label class="gl-field"><span>Tags (vírgulas)</span><input type="text" name="tags" /></label>
+      <label class="gl-field"><span>Data</span><input type="date" name="taken_at" /></label>
+      <label class="gl-field"><span>Mover para álbum</span><select name="album_id" id="gl-move-album-select"></select></label>
+      <footer class="gl-modal__foot">
+        <button type="button" class="gl-btn gl-btn--ghost" data-gl-close>Cancelar</button>
+        <button type="submit" class="gl-btn gl-btn--royal">Salvar</button>
+      </footer>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="gl-lightbox" id="gl-lightbox" aria-hidden="true">
+  <div class="gl-lightbox__backdrop"></div>
+  <button type="button" class="gl-lightbox__close" id="gl-lb-close" aria-label="Fechar">×</button>
+  <button type="button" class="gl-lightbox__nav gl-lightbox__nav--prev" id="gl-lb-prev" aria-label="Anterior"></button>
+  <button type="button" class="gl-lightbox__nav gl-lightbox__nav--next" id="gl-lb-next" aria-label="Próximo"></button>
+  <div class="gl-lightbox__stage">
+    <img id="gl-lb-img" alt="" loading="lazy" />
+    <p class="gl-lightbox__counter" id="gl-lb-counter">1 / 1</p>
+  </div>
+  <div class="gl-lightbox__info">
+    <h3 id="gl-lb-title"></h3>
+    <p id="gl-lb-meta"></p>
+    <p id="gl-lb-desc"></p>
+    <div class="gl-lightbox__actions">
+      <a href="#" id="gl-lb-download" class="gl-lb-action" download target="_blank" rel="noopener">Baixar</a>
+      <button type="button" class="gl-lb-action" id="gl-lb-share">Compartilhar</button>
+      {% if can_manage_gallery %}
+      <button type="button" class="gl-lb-action gl-lb-action--danger" id="gl-lb-delete">Excluir foto</button>
+      {% endif %}
+    </div>
+  </div>
+  <div class="gl-lightbox__thumbs" id="gl-lb-thumbs"></div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script src="{{ url_for('static', filename='js/gallery-premium.js') }}" defer></script>
+{% endblock %}

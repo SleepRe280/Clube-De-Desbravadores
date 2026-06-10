@@ -1,0 +1,307 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Gestão da Liderança{% endblock %}
+{% block header_sub %}Equipe da diretoria — delegação, cargos e perfis públicos{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/directorate-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set m = metrics|default({}) %}
+{% set pg = pagination|default({'page': 1, 'pages': 1, 'total': 0}) %}
+{% set flt = filters|default({}) %}
+{% set flash_success = '' %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    {% if category == 'success' %}{% set flash_success = message %}{% endif %}
+  {% endfor %}
+{% endwith %}
+
+<div
+  id="ld-app"
+  class="ld-page ap-animate-in"
+  data-config='{{ {
+    "flashSuccess": flash_success,
+    "clubeId": admin_scope_clube_id or "",
+    "canEdit": can_edit_directorate_fichas|default(false),
+    "canDelegate": can_assign_directorate|default(false),
+    "allowedRoles": allowed_roles,
+    "permissionLabels": permission_labels|default({}),
+    "urls": {
+      "searchUsers": url_for("admin.directorate_api_search_users", **admin_nav_kw),
+      "saveMember": url_for("admin.directorate_api_save", **admin_nav_kw),
+      "delegate": url_for("admin.directorate_api_delegate", **admin_nav_kw),
+      "permissions": url_for("admin.directorate_api_permissions", **admin_nav_kw),
+      "memberTpl": url_for("admin.directorate_api_member", member_id=0, **admin_nav_kw)
+    }
+  }|tojson }}'
+>
+  <header class="ld-page-head">
+    <div>
+      <h1>Gestão da Liderança</h1>
+      <p>
+        Cadastre membros, delegue funções e gerencie toda a equipe da diretoria do clube.
+        {% if not can_assign_directorate and can_edit_directorate_fichas %}
+        <span class="block mt-1 text-amber-700">Delegar funções no sistema é exclusivo do diretor.</span>
+        {% elif not can_edit_directorate_fichas %}
+        <span class="block mt-1">Modo consulta — sem alterações.</span>
+        {% endif %}
+      </p>
+    </div>
+    {% if can_edit_directorate_fichas or can_assign_directorate %}
+    <div class="ld-head-actions">
+      <button type="button" class="ld-btn ld-btn--outline" id="ld-open-permissions" {% if not can_assign_directorate %}disabled title="Apenas o diretor"{% endif %}>
+        Cargos e permissões
+      </button>
+      {% if can_edit_directorate_fichas %}
+      <button type="button" class="ld-btn ld-btn--violet" id="ld-open-new">+ Novo membro</button>
+      {% endif %}
+    </div>
+    {% endif %}
+  </header>
+
+  <section class="ld-kpi-row" aria-label="Indicadores da liderança">
+    <article class="ld-kpi">
+      <div class="ld-kpi__icon ld-kpi__icon--violet" aria-hidden="true">👥</div>
+      <p class="ld-kpi__label">Membros da diretoria</p>
+      <p class="ld-kpi__value">{{ m.n_members|default(0) }}</p>
+      <p class="ld-kpi__hint">Ativos no clube</p>
+    </article>
+    <article class="ld-kpi">
+      <div class="ld-kpi__icon ld-kpi__icon--blue" aria-hidden="true">📋</div>
+      <p class="ld-kpi__label">Cargos ocupados</p>
+      <p class="ld-kpi__value">{{ m.n_occupied_roles|default(0) }}</p>
+      <p class="ld-kpi__hint">Funções delegadas</p>
+    </article>
+    <article class="ld-kpi">
+      <div class="ld-kpi__icon ld-kpi__icon--orange" aria-hidden="true">📂</div>
+      <p class="ld-kpi__label">Cargos disponíveis</p>
+      <p class="ld-kpi__value">{{ m.n_available_roles|default(0) }}</p>
+      <p class="ld-kpi__hint">Vagas na estrutura</p>
+    </article>
+    <article class="ld-kpi">
+      <div class="ld-kpi__icon ld-kpi__icon--green" aria-hidden="true">✨</div>
+      <p class="ld-kpi__label">Entradas recentes</p>
+      <p class="ld-kpi__value">{{ m.recent_entries|default(0) }}</p>
+      <p class="ld-kpi__hint">Últimos 30 dias</p>
+    </article>
+    <article class="ld-kpi">
+      <div class="ld-kpi__icon ld-kpi__icon--violet" aria-hidden="true">🕐      <p class="ld-kpi__label">Última alteração</p>
+      <p class="ld-kpi__value" style="font-size:1rem">{{ metrics_last_change_fmt or '—' }}</p>
+      <p class="ld-kpi__hint">Registro no sistema</p>
+    </article>
+  </section>
+
+  <div class="ld-main-grid">
+    <section class="ld-card" aria-labelledby="ld-team-title">
+      <h2 id="ld-team-title" class="ld-card__title">Equipe da diretoria</h2>
+      <p class="ld-card__sub">{{ team_all_count|default(0) }} membro(s) cadastrado(s).</p>
+
+      <form method="get" class="ld-filters" action="{{ url_for('admin.directorate_list', **admin_nav_kw) }}">
+        {% if admin_scope_clube_id %}
+        <input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />
+        {% endif %}
+        <div class="ld-search-wrap">
+          <span class="ld-search-icon" aria-hidden="true">🔍</span>
+          <input type="search" name="q" value="{{ flt.q|default('') }}" class="ld-search-input" placeholder="Buscar por nome, e-mail ou telefone…" />
+        </div>
+        <select name="cargo" class="ld-select" aria-label="Filtrar por cargo">
+          <option value="">Todos os cargos</option>
+          {% for code, label in allowed_roles %}
+          <option value="{{ code }}" {% if flt.cargo == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <select name="status" class="ld-select" aria-label="Filtrar por status">
+          <option value="">Todos os status</option>
+          <option value="ativo" {% if flt.status == 'ativo' %}selected{% endif %}>Ativo</option>
+          <option value="inativo" {% if flt.status == 'inativo' %}selected{% endif %}>Inativo</option>
+        </select>
+        <select name="sort" class="ld-select" aria-label="Ordenação">
+          <option value="name" {% if flt.sort|default('name') == 'name' %}selected{% endif %}>Nome A–Z</option>
+          <option value="cargo" {% if flt.sort == 'cargo' %}selected{% endif %}>Cargo</option>
+          <option value="recent" {% if flt.sort == 'recent' %}selected{% endif %}>Mais recentes</option>
+        </select>
+        <button type="submit" class="ld-btn ld-btn--ghost ld-btn--sm">Filtrar</button>
+      </form>
+
+      <div class="ld-team-list" id="ld-team-list">
+        {% for row in team_rows %}
+        <article class="ld-team-row" data-member-id="{{ row.id }}">
+          <span class="ld-avatar">
+            {% if row.photo_url %}<img src="{{ row.photo_url }}" alt="" />{% else %}{{ row.initials }}{% endif %}
+          </span>
+          <div class="ld-team-meta">
+            <h3>{{ row.full_name }}</h3>
+            <p>{% if row.email %}{{ row.email }}{% endif %}{% if row.email and row.phone %} · {% endif %}{% if row.phone %}{{ row.phone }}{% endif %}</p>
+            {% if row.unit or row.city %}<p>{{ row.unit }}{% if row.unit and row.city %} · {% endif %}{{ row.city }}</p>{% endif %}
+          </div>
+          <div class="ld-team-side">
+            <span class="ld-tag {{ row.role_tag_css }}">{{ row.cargo }}</span>
+            <span class="ld-status ld-status--{{ row.status }}">{{ row.status_label }}{% if row.delegation_start_fmt %} · Desde {{ row.delegation_start_fmt }}{% endif %}</span>
+            {% if can_edit_directorate_fichas or can_assign_directorate %}
+            <div class="ld-row-actions">
+              <button type="button" class="ld-icon-btn ld-btn-edit" data-id="{{ row.id }}" title="Editar">✏️</button>
+              <button type="button" class="ld-icon-btn ld-btn-profile" data-id="{{ row.id }}" title="Perfil">👁</button>
+              {% if can_assign_directorate %}
+              <button type="button" class="ld-icon-btn ld-btn-role" data-id="{{ row.id }}" data-user-id="{{ row.user_id or '' }}" title="Alterar cargo">🔄</button>
+              {% endif %}
+              <form method="post" action="{{ url_for('admin.directorate_delete', id=row.id) }}" class="inline" onsubmit="return confirm('Remover este membro?');">
+                {% if admin_scope_clube_id %}<input type="hidden" name="clube_id" value="{{ admin_scope_clube_id }}" />{% endif %}
+                <button type="submit" class="ld-icon-btn" title="Remover">🗑</button>
+              </form>
+            </div>
+            {% endif %}
+          </div>
+        </article>
+        {% else %}
+        <div class="ld-empty">
+          <p>Nenhum membro encontrado.</p>
+          {% if can_edit_directorate_fichas %}
+          <button type="button" class="ld-btn ld-btn--violet mt-3" id="ld-empty-new">+ Cadastrar primeiro membro</button>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if pg.pages > 1 %}
+      <nav class="ld-pagination" aria-label="Paginação">
+        {% for p in range(1, pg.pages + 1) %}
+        <a href="{{ url_for('admin.directorate_list', page=p, q=flt.q, cargo=flt.cargo, status=flt.status, sort=flt.sort, **admin_nav_kw) }}" class="{% if p == pg.page %}is-active{% endif %}">{{ p }}</a>
+        {% endfor %}
+      </nav>
+      {% endif %}
+    </section>
+
+    {% if can_assign_directorate %}
+    <section class="ld-card" aria-labelledby="ld-delegate-title">
+      <h2 id="ld-delegate-title" class="ld-card__title">Delegar função</h2>
+      <p class="ld-card__sub">Busque um usuário do clube e confirme a delegação.</p>
+      <div class="ld-delegate-search ld-search-wrap">
+        <span class="ld-search-icon" aria-hidden="true">🔍</span>
+        <input type="search" id="ld-delegate-q" class="ld-search-input" placeholder="Nome ou e-mail…" autocomplete="off" />
+        <div id="ld-delegate-ac" class="ld-ac-list" role="listbox"></div>
+      </div>
+      <button type="button" class="ld-btn ld-btn--ghost ld-btn--sm mb-3" id="ld-delegate-search-btn">Buscar</button>
+      <div id="ld-delegate-preview" class="ld-person-mini is-hidden">
+        <span class="ld-avatar" id="ld-delegate-avatar">?</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-sm m-0 text-navy-900" id="ld-delegate-name">—</p>
+          <p class="text-xs text-slate-500 m-0" id="ld-delegate-email">—</p>
+        </div>
+      </div>
+      <form id="ld-delegate-form" class="ld-form-grid">
+        <input type="hidden" name="user_id" id="ld-delegate-user-id" value="" />
+        <div>
+          <label for="ld-delegate-cargo">Função / cargo</label>
+          <select id="ld-delegate-cargo" name="cargo" required>
+            <option value="">Selecione…</option>
+            {% for code, label in allowed_roles %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="ld-delegate-start">Data de início</label>
+          <input type="date" id="ld-delegate-start" name="start_date" />
+        </div>
+        <div>
+          <label for="ld-delegate-end">Data de término (opcional)</label>
+          <input type="date" id="ld-delegate-end" name="end_date" />
+        </div>
+        <label class="ld-toggle" style="grid-column:1/-1">
+          <input type="checkbox" name="active" value="1" checked /> Definir como ativo
+        </label>
+        <button type="submit" class="ld-btn ld-btn--gradient" style="grid-column:1/-1" id="ld-delegate-submit" disabled>Delegar função</button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+
+  {% if recent_cards %}
+  <section class="ld-card mt-4">
+    <h2 class="ld-card__title">Cadastros recentes</h2>
+    <p class="ld-card__sub">Últimas fichas adicionadas à equipe</p>
+    <div class="ld-recent-grid">
+      {% for c in recent_cards %}
+      <article class="ld-recent-card">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="ld-avatar" style="width:2rem;height:2rem;font-size:0.7rem">
+            {% if c.photo_url %}<img src="{{ c.photo_url }}" alt="" />{% else %}{{ c.initials }}{% endif %}
+          </span>
+          <div>
+            <p class="font-semibold text-sm m-0">{{ c.full_name }}</p>
+            <span class="ld-tag {{ c.role_tag_css }}">{{ c.cargo }}</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 m-0">{{ c.email or '—' }}</p>
+        <p class="text-xs text-slate-400 mt-1 mb-0">Cadastrado {{ c.created_at_fmt or 'recentemente' }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if audit_log %}
+  <section class="ld-card">
+    <h2 class="ld-card__title">Histórico de alterações</h2>
+    <p class="ld-card__sub">Últimas ações na gestão da liderança</p>
+    {% for h in audit_log %}
+    <div class="ld-history-item">
+      <span>{{ h.summary }}</span>
+      <span class="text-slate-500">{{ h.when }}</span>
+      <span class="text-slate-400">por {{ h.who }}</span>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+
+<div id="ld-drawer-member-overlay" class="ld-drawer-overlay" aria-hidden="true">
+  <aside class="ld-drawer ld-drawer--wide" role="dialog" aria-labelledby="ld-drawer-member-title">
+    <div class="ld-drawer__head">
+      <div>
+        <h2 id="ld-drawer-member-title" class="text-lg font-bold text-navy-900 m-0">Novo membro</h2>
+        <p class="text-xs text-slate-500 m-0 mt-1">Cadastro completo da liderança</p>
+      </div>
+      <button type="button" class="ld-icon-btn ld-drawer-close" data-target="member" aria-label="Fechar">✕</button>
+    </div>
+    <div class="ld-drawer__body">
+      <form id="ld-member-form" enctype="multipart/form-data">
+        <input type="hidden" name="id" id="ld-member-id" value="" />
+        {% include "admin/partials/directorate_member_form_fields.html" %}
+        <button type="submit" class="ld-btn ld-btn--violet w-full mt-4">Salvar membro</button>
+      </form>
+    </div>
+  </aside>
+</div>
+
+<div id="ld-drawer-profile-overlay" class="ld-drawer-overlay" aria-hidden="true">
+  <aside class="ld-drawer ld-drawer--wide" role="dialog">
+    <div class="ld-drawer__head">
+      <h2 class="text-lg font-bold text-navy-900 m-0">Perfil do membro</h2>
+      <button type="button" class="ld-icon-btn ld-drawer-close" data-target="profile" aria-label="Fechar">✕</button>
+    </div>
+    <div class="ld-drawer__body" id="ld-profile-body"><div class="ld-skeleton"></div></div>
+  </aside>
+</div>
+
+<div id="ld-drawer-perms-overlay" class="ld-drawer-overlay" aria-hidden="true">
+  <aside class="ld-drawer" role="dialog">
+    <div class="ld-drawer__head">
+      <h2 class="text-lg font-bold text-navy-900 m-0">Cargos e permissões</h2>
+      <button type="button" class="ld-icon-btn ld-drawer-close" data-target="perms" aria-label="Fechar">✕</button>
+    </div>
+    <div class="ld-drawer__body">
+      <p class="text-sm text-slate-600 mb-4">Defina o que cada função pode acessar no painel.</p>
+      <div id="ld-perms-root" class="ld-perm-grid"></div>
+      <button type="button" class="ld-btn ld-btn--violet w-full mt-4" id="ld-perms-save">Salvar permissões</button>
+    </div>
+  </aside>
+</div>
+
+<div id="ld-toast-root" class="ld-toast-root" aria-live="polite"></div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/directorate-premium.js') }}" defer></script>
+{% endblock %}

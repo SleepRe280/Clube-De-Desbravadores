@@ -1,0 +1,39 @@
+<aside class="act-sidebar">
+  <div class="act-side-card">
+    <h3>Pendentes de avaliação <span class="act-side-count">{{ act.stats.pending_review }}</span></h3>
+    {% for item in act.pending_sidebar[:8] %}
+    <div class="act-pending-item">
+      <div class="act-pending-item__avatar">{{ item.member_name[0]|upper }}</div>
+      <div class="act-pending-item__body">
+        <strong>{{ item.member_name }}</strong>
+        <span class="act-pending-item__req">{{ item.title }}</span>
+        <span class="act-evidence-badge">{{ item.evidence_type }}</span>
+        <span class="act-pending-item__date">{{ item.ago }}</span>
+        <a href="{{ url_for('admin.admin_activities', tab='desbravadores', catalogo=1, membro=item.member_id, **admin_nav_kw) }}">Revisar →</a>
+      </div>
+    </div>
+    {% else %}
+    <p class="act-side-empty">Nada pendente.</p>
+    {% endfor %}
+    {% if act.stats.pending_review > 0 %}
+    <a href="{{ url_for('admin.admin_activities', tab='aprovacoes', **admin_nav_kw) }}" class="act-side-link">Ver todas →</a>
+    {% endif %}
+  </div>
+
+  <div class="act-side-card">
+    <h3>Atividades para casa <span class="act-side-count">{{ act.stats.homework_active }}</span></h3>
+    {% for hw in act.homework_rows[:6] %}
+    <div class="act-hw-side-item">
+      <span class="act-hw-side-item__icon" aria-hidden="true">📅</span>
+      <div>
+        <strong>{{ hw.title }}</strong>
+        <span class="act-pill act-pill--tiny">{{ hw.class_name or hw.class_slug }}</span>
+        <span class="act-hw-side-item__due">Prazo: {{ hw.due_label }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p class="act-side-empty">Nenhuma tarefa ativa.</p>
+    {% endfor %}
+    <a href="{{ url_for('admin.admin_activities', tab='tarefas', **admin_nav_kw) }}" class="act-side-link">Ver todas →</a>
+  </div>
+</aside>

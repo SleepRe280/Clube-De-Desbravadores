@@ -1,0 +1,145 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Unidades{% endblock %}
+{% block header_sub %}Central de gerenciamento das equipes do clube{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/units-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div id="un-app" class="un-page ap-animate-in" data-clube-id="{{ admin_scope_clube_id or '' }}">
+  <nav class="un-breadcrumb" aria-label="Navegação">
+    <a href="{{ nav.units|default('/admin/unidades') }}">Unidades</a>
+  </nav>
+
+  <header class="un-page-head ap-page-head">
+    <div>
+      <h1>Unidades</h1>
+      <p>Dashboard das equipes — presença, classes, especialidades e evolução.</p>
+    </div>
+    {% if admin_scope_clube_id %}
+    <a href="{{ url_for('admin.admin_unit_create', **admin_nav_kw) }}" class="un-btn un-btn--primary" style="margin-top:0.5rem">+ Nova unidade</a>
+    {% endif %}
+  </header>
+
+  {% if admin_needs_clube_scope and not admin_scope_clube_id %}
+  <div class="un-scope-empty">
+    <p style="margin:0;font-weight:700;color:#101828">Selecione um clube</p>
+    <p style="margin:0.5rem 0 0;font-size:0.88rem;color:#64748b">Use o seletor no topo do painel para gerenciar as unidades.</p>
+  </div>
+  {% elif not un %}
+  <div class="un-scope-empty"><p style="margin:0;color:#64748b">Carregando…</p></div>
+  {% else %}
+
+  <div class="un-kpi-row">
+    <article class="un-kpi">
+      <div class="un-kpi__icon un-kpi__icon--purple">🏕️</div>
+      <p class="un-kpi__label">Total de Unidades</p>
+      <p class="un-kpi__value">{{ un.kpis.total_units }}</p>
+      <span class="un-kpi__meta un-kpi__meta--up">+{{ un.kpis.active_units }} ativas</span>
+    </article>
+    <article class="un-kpi">
+      <div class="un-kpi__icon un-kpi__icon--blue">👥</div>
+      <p class="un-kpi__label">Total de Membros</p>
+      <p class="un-kpi__value">{{ un.kpis.total_members }}</p>
+    </article>
+    <article class="un-kpi">
+      <div class="un-kpi__icon un-kpi__icon--green">📊</div>
+      <p class="un-kpi__label">Média de Presença</p>
+      <p class="un-kpi__value">{{ un.kpis.avg_attendance }}%</p>
+    </article>
+    <article class="un-kpi un-kpi--featured">
+      <div class="un-kpi__icon un-kpi__icon--gold">🏆</div>
+      <p class="un-kpi__label">Unidade Destaque</p>
+      <p class="un-kpi__value" style="font-size:1rem">{{ un.kpis.featured_unit }}</p>
+      <span class="un-kpi__meta un-kpi__meta--muted">Maior frequência no mês</span>
+    </article>
+  </div>
+
+  <div class="un-toolbar">
+    <div class="un-search">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="search" id="un-search-input" placeholder="Buscar unidade…" autocomplete="off" />
+    </div>
+    <select class="un-select" id="un-filter-status" aria-label="Filtrar status">
+      <option value="">Todas as unidades</option>
+      <option value="excelente">Excelente</option>
+      <option value="atencao">Atenção</option>
+      <option value="baixa">Baixa frequência</option>
+    </select>
+    <select class="un-select" id="un-sort" aria-label="Ordenar">
+      <option value="name">Ordenar por: Nome</option>
+      <option value="attendance">Ordenar por: Presença</option>
+      <option value="members">Ordenar por: Membros</option>
+    </select>
+    <div class="un-view-toggle">
+      <button type="button" class="un-view-btn is-active" data-un-view="grid" title="Grade" aria-pressed="true">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 012.5 1h3A1.5 1.5 0 017 2.5v3A1.5 1.5 0 015.5 7h-3A1.5 1.5 0 011 5.5v-3zm8 0A1.5 1.5 0 0110.5 1h3A1.5 1.5 0 0115 2.5v3A1.5 1.5 0 0113.5 7h-3A1.5 1.5 0 019 5.5v-3zm-8 8A1.5 1.5 0 012.5 9h3A1.5 1.5 0 017 10.5v3A1.5 1.5 0 015.5 15h-3A1.5 1.5 0 011 13.5v-3zm8 0a1.5 1.5 0 011.5-1.5h3a1.5 1.5 0 011.5 1.5v3a1.5 1.5 0 01-1.5 1.5h-3A1.5 1.5 0 019 13.5v-3z"/></svg>
+      </button>
+      <button type="button" class="un-view-btn" data-un-view="list" title="Lista" aria-pressed="false">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 00.5.5h10a.5.5 0 000-1H3a.5.5 0 00-.5.5zm0-4a.5.5 0 00.5.5h10a.5.5 0 000-1H3a.5.5 0 00-.5.5zm0-4a.5.5 0 00.5.5h10a.5.5 0 000-1H3a.5.5 0 00-.5.5z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="un-grid" id="un-cards-grid">
+    {% for card in un.cards %}
+    <article class="un-card" data-theme="{{ card.theme_color }}" data-name="{{ card.name|lower }}" data-status="{{ card.status_badge }}" data-attendance="{{ card.attendance_pct }}" data-members="{{ card.member_count }}">
+      <div class="un-card__head">
+        <div class="un-card__brand">
+          <div class="un-card__logo">
+            {% if card.logo_url %}<img src="{{ card.logo_url }}" alt="" />{% else %}{{ card.initials }}{% endif %}
+          </div>
+          <div>
+            <h3 class="un-card__title">{{ card.name }}</h3>
+            <p class="un-card__counselor">Conselheiro(a): {{ card.counselor }}</p>
+          </div>
+        </div>
+        <span class="un-badge un-badge--{{ card.status_badge }}">{{ card.status_label }}</span>
+      </div>
+      <div class="un-card__body">
+        <div class="un-progress-group">
+          <div class="un-progress-label"><span>Presença (este mês)</span><span>{{ card.attendance_pct }}%</span></div>
+          <div class="un-progress-bar"><span style="width:{{ card.attendance_pct }}%"></span></div>
+        </div>
+        <div class="un-progress-group">
+          <div class="un-progress-label"><span>Classes</span><span>{{ card.classes_pct }}%</span></div>
+          <div class="un-progress-bar"><span style="width:{{ card.classes_pct }}%"></span></div>
+        </div>
+        <div class="un-progress-group">
+          <div class="un-progress-label"><span>Especialidades</span><span>{{ card.specialties_pct }}%</span></div>
+          <div class="un-progress-bar"><span style="width:{{ card.specialties_pct }}%"></span></div>
+        </div>
+        <p style="margin:0.35rem 0 0;font-size:0.72rem;font-weight:600;color:#94a3b8">Evolução (4 semanas)</p>
+        <svg class="un-sparkline" data-trend="{{ card.trend|join(',') }}" viewBox="0 0 120 36" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div class="un-card__members">
+          <div class="un-avatars">
+            {% for av in card.avatars %}
+            <span class="un-avatar" title="{{ av.name }}">
+              {% if av.photo_url %}<img src="{{ av.photo_url }}" alt="" />{% else %}{{ av.initial }}{% endif %}
+            </span>
+            {% endfor %}
+            {% if card.extra_avatars %}<span class="un-avatar un-avatar--more">+{{ card.extra_avatars }}</span>{% endif %}
+          </div>
+          <span class="un-member-count">{{ card.member_count }} membros</span>
+        </div>
+      </div>
+      <div class="un-card__foot">
+        <a href="{{ card.detail_url }}" class="un-btn un-btn--ghost">Mais detalhes →</a>
+        <a href="{{ card.edit_url }}" class="un-btn un-btn--icon un-btn--ghost" title="Editar unidade">✎</a>
+      </div>
+    </article>
+    {% else %}
+    <p class="col-span-full text-center py-12 text-slate-500" style="grid-column:1/-1">Nenhuma unidade cadastrada. <a href="{{ url_for('admin.admin_unit_create', **admin_nav_kw) }}">Criar primeira unidade</a></p>
+    {% endfor %}
+  </div>
+  <p id="un-empty-filter" class="un-hidden" style="text-align:center;color:#64748b;padding:2rem">Nenhuma unidade corresponde aos filtros.</p>
+
+  <aside class="un-tip" role="note">
+    <span class="un-tip__icon">🏆</span>
+    <span><strong>Dica para líderes:</strong> {{ un.tip }}</span>
+  </aside>
+  {% endif %}
+</div>
+<script src="{{ url_for('static', filename='js/units-premium.js') }}" defer></script>
+{% endblock %}

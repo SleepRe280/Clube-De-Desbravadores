@@ -1,0 +1,161 @@
+{% extends "parent/base_parent.html" %}
+{% block title %}Especialidades{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/parent-specialties-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+{% set album = album|default({'cards': [], 'categories': [], 'stats': {}}) %}
+{% set stats = album.stats|default({}) %}
+{% set cards = album.cards|default([]) %}
+{% set categories = album.categories|default([]) %}
+
+<div id="ps-app" class="ps-page">
+  <header class="ps-head">
+    <div class="ps-head__title-row">
+      <div class="ps-head__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke-linecap="round"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 7h8M8 11h6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Meu Álbum de Especialidades</h1>
+        <p>Colecione medalhas, acompanhe conquistas e celebre cada passo da jornada do desbravador.</p>
+      </div>
+    </div>
+  </header>
+
+  {% if portal_child %}
+  <section class="ps-hero" aria-label="Progresso da coleção">
+    <div class="ps-hero__progress">
+      <div class="ps-ring" role="img" aria-label="{{ stats.progress_label|default('0 / 512') }} especialidades colecionadas">
+        <svg class="ps-ring__svg" viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="ps-ring__track" cx="50" cy="50" r="42" />
+          <circle class="ps-ring__fill" cx="50" cy="50" r="42" data-percent="{{ stats.percent|default(0) }}" />
+        </svg>
+        <span class="ps-ring__center" aria-hidden="true">🏆</span>
+      </div>
+      <div>
+        <p class="ps-hero__label">Coleção geral</p>
+        <p class="ps-hero__count">
+          <strong>{{ stats.completed|default(0) }}</strong>
+          <span>de {{ stats.total|default(512) }} especialidades colecionadas</span>
+        </p>
+        <div class="ps-hero__bar" aria-hidden="true">
+          <div class="ps-hero__bar-fill" data-percent="{{ stats.percent|default(0) }}" style="width:0%"></div>
+        </div>
+        <p class="ps-hero__pct">{{ stats.percent|default(0) }}%</p>
+      </div>
+    </div>
+    <div class="ps-hero__stats">
+      <div class="ps-stat">
+        <div class="ps-stat__icon ps-stat__icon--ok" aria-hidden="true">✓</div>
+        <div class="ps-stat__value" data-pp-count="{{ stats.completed|default(0) }}">{{ stats.completed|default(0) }}</div>
+        <div class="ps-stat__label">Concluídas</div>
+      </div>
+      <div class="ps-stat">
+        <div class="ps-stat__icon ps-stat__icon--warn" aria-hidden="true">◐</div>
+        <div class="ps-stat__value" data-pp-count="{{ stats.in_progress|default(0) }}">{{ stats.in_progress|default(0) }}</div>
+        <div class="ps-stat__label">Em andamento</div>
+      </div>
+      <div class="ps-stat">
+        <div class="ps-stat__icon ps-stat__icon--lock" aria-hidden="true">🔒</div>
+        <div class="ps-stat__value" data-pp-count="{{ stats.available|default(0) }}">{{ stats.available|default(0) }}</div>
+        <div class="ps-stat__label">Disponíveis</div>
+      </div>
+    </div>
+  </section>
+
+  {% if cards %}
+  <nav class="ps-filters" aria-label="Filtrar por categoria">
+    <button type="button" class="ps-filter is-active" data-category="todas">
+      <span class="ps-filter__icon" aria-hidden="true">🏅</span>
+      Todas
+    </button>
+    {% for cat in categories %}
+    <button type="button" class="ps-filter" data-category="{{ cat.slug }}">
+      <span class="ps-filter__icon" aria-hidden="true">{{ cat.icon }}</span>
+      {{ cat.name }}
+    </button>
+    {% endfor %}
+  </nav>
+
+  {% for cat in categories %}
+  {% set cat_cards = cat.cards|default([]) %}
+  {% if cat_cards %}
+  <section class="ps-section" data-category="{{ cat.slug }}" aria-labelledby="ps-sec-{{ cat.slug }}">
+    <div class="ps-section__head">
+      <span class="ps-section__icon" aria-hidden="true">{{ cat.icon }}</span>
+      <h2 class="ps-section__title" id="ps-sec-{{ cat.slug }}">{{ cat.name }}</h2>
+      <span class="ps-section__count">{{ cat_cards|length }}</span>
+    </div>
+    <div class="ps-grid">
+      {% for s in cat_cards %}
+      <article
+        class="ps-card {% if s.status == 'concluida' %}ps-card--done{% elif s.locked or s.status == 'bloqueada' %}ps-card--locked{% endif %}"
+        data-id="{{ s.id }}"
+        data-category="{{ s.category_slug }}"
+        tabindex="0"
+        role="button"
+        aria-label="{{ s.name }} — {{ s.status_label|default(s.status) }}"
+      >
+        {% if s.status == 'concluida' %}
+        <span class="ps-card__badge ps-card__badge--done" aria-hidden="true">✓</span>
+        {% elif s.status == 'em_andamento' and not s.locked %}
+        <span class="ps-card__badge ps-card__badge--progress" aria-hidden="true">◐</span>
+        {% else %}
+        <span class="ps-card__badge ps-card__badge--lock" aria-hidden="true">🔒</span>
+        {% endif %}
+
+        {% if s.icon_url %}
+        <div class="ps-card__emblem">
+          <img src="{{ s.icon_url }}" alt="" loading="lazy" />
+        </div>
+        {% else %}
+        <div class="ps-card__emblem">
+          <span class="ps-card__emblem-hex" style="background:{{ s.color_hex|default('#3b82f6') }}18">
+            {{ s.icon_emoji|default('🏅') }}
+          </span>
+        </div>
+        {% endif %}
+
+        <p class="ps-card__name">{{ s.name }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% endfor %}
+
+  <script id="ps-cards-data" type="application/json">{{ cards|tojson }}</script>
+
+  {% else %}
+  <div class="ps-empty">
+    <p>Nenhuma especialidade no catálogo do clube ainda. A diretoria irá configurar em breve.</p>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="ps-empty">
+    <p class="font-bold text-navy-900 mb-2">Selecione um desbravador</p>
+    <p>Vincule um filho ao seu perfil para visualizar o álbum de especialidades.</p>
+  </div>
+  {% endif %}
+</div>
+
+{# Painel de detalhes #}
+<div id="ps-detail" class="ps-detail" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="ps-detail-title">
+  <div class="ps-detail__backdrop"></div>
+  <div class="ps-detail__panel">
+    <button type="button" class="ps-detail__close" aria-label="Fechar">×</button>
+    <div class="ps-detail__body"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/parent-specialties-premium.js') }}" defer></script>
+{% endblock %}

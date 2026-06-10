@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title|default('Servidor') }} — Clube de Desbravadores</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+        background: linear-gradient(160deg, #0d1b3e, #12224d);
+        color: #e2e8f0;
+        padding: 1.5rem;
+      }
+      .box {
+        max-width: 28rem;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(249, 188, 21, 0.35);
+        border-radius: 1rem;
+        padding: 1.75rem;
+        text-align: center;
+      }
+      h1 { font-size: 1.25rem; margin: 0 0 0.75rem; color: #f9bc15; }
+      p { margin: 0 0 1rem; line-height: 1.5; font-size: 0.95rem; }
+      code { background: rgba(0,0,0,0.25); padding: 0.15rem 0.4rem; border-radius: 0.35rem; }
+      a.btn {
+        display: inline-block;
+        margin-top: 0.5rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 0.65rem;
+        background: #f9bc15;
+        color: #0d1b3e;
+        font-weight: 700;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>{{ title|default('Servidor') }}</h1>
+      <p>{{ message|default('Não foi possível completar o pedido.') }}</p>
+      {% if show_restart_hint %}
+      <p class="text-sm opacity-90">
+        Se vir <strong>conexão recusada</strong> ao mudar de aba, o servidor local parou.
+        Execute <code>run.bat</code> ou <code>python run.py</code> e abra
+        <code>http://127.0.0.1:5055/login</code> (com a porta <strong>5055</strong>).
+      </p>
+      {% endif %}
+      <a class="btn" href="{{ url_for('auth.login') }}">Ir para o login</a>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  </body>
+</html>

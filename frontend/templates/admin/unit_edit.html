@@ -1,0 +1,98 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if is_new %}Nova unidade{% else %}Editar {{ unit.name }}{% endif %}{% endblock %}
+{% block header_sub %}Configurações e identidade da unidade{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/units-premium.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div id="un-app" class="un-page ap-animate-in">
+  <nav class="un-breadcrumb">
+    <a href="{{ url_for('admin.admin_units', **admin_nav_kw) }}">Unidades</a>
+    {% if unit and not is_new %}
+    <span>›</span>
+    <a href="{{ url_for('admin.admin_unit_detail', unit_id=unit.id, **admin_nav_kw) }}">{{ unit.name }}</a>
+    {% endif %}
+    <span>›</span>
+    <strong>{% if is_new %}Nova unidade{% else %}Editar{% endif %}</strong>
+  </nav>
+
+  <header class="un-page-head ap-page-head">
+    <h1>{% if is_new %}Nova unidade{% else %}Editar unidade{% endif %}</h1>
+    <p>Nome, logo, status e informações gerais.</p>
+  </header>
+
+  <section class="un-panel" style="padding:1.5rem;max-width:720px">
+    <form method="post" enctype="multipart/form-data" class="un-form" action="{% if is_new %}{{ url_for('admin.admin_unit_create', **admin_nav_kw) }}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <div class="un-form-grid">
+        <div>
+          <label>Nome da unidade *</label>
+          <input name="name" required value="{{ unit.name if unit else '' }}" placeholder="Ex.: Embaixadoras Reais" />
+        </div>
+        <div>
+          <label>Sigla / iniciais</label>
+          <input name="initials" maxlength="8" value="{{ unit.initials if unit else '' }}" placeholder="Ex.: ER" />
+        </div>
+        <div>
+          <label>Status</label>
+          <select name="status">
+            {% for code, label in unit_status_options %}
+            <option value="{{ code }}" {% if unit and unit.status == code %}selected{% elif not unit and code == 'ativa' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Cor do tema</label>
+          <select name="theme_color">
+            {% for code, label in unit_theme_options %}
+            <option value="{{ code }}" {% if unit and unit.theme_color == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Data de fundação</label>
+          <input type="date" name="founded_at" value="{{ unit.founded_at.isoformat() if unit and unit.founded_at else '' }}" />
+        </div>
+        <div>
+          <label>Logo da unidade</label>
+          <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" />
+        </div>
+      </div>
+      <div style="margin-top:1rem">
+        <label>Tipo / descrição</label>
+        <input name="unit_type" value="{{ unit.unit_type if unit else '' }}" placeholder="Ex.: Unidade Feminina" />
+      </div>
+      <div style="margin-top:1rem">
+        <label>Informações gerais</label>
+        <textarea name="description" rows="3" placeholder="Notas sobre a unidade…">{{ unit.description if unit else '' }}</textarea>
+      </div>
+      <div style="display:flex;gap:0.65rem;margin-top:1.5rem;flex-wrap:wrap">
+        <button type="submit" class="un-btn un-btn--primary">Salvar alterações</button>
+        {% if unit and not is_new %}
+        <a href="{{ url_for('admin.admin_unit_detail', unit_id=unit.id, **admin_nav_kw) }}" class="un-btn un-btn--ghost">Cancelar</a>
+        {% else %}
+        <a href="{{ url_for('admin.admin_units', **admin_nav_kw) }}" class="un-btn un-btn--ghost">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+
+  {% if unit and not is_new %}
+  <section class="un-widget" id="un-danger" style="max-width:720px;margin-top:1.5rem">
+    <div class="un-widget__head" style="color:#dc2626">Zona de perigo</div>
+    <div class="un-danger-zone" style="padding:1rem 1.25rem">
+      <p style="margin:0 0 1rem;font-size:0.85rem;color:#64748b">A exclusão remove a unidade do catálogo. Os membros permanecem no clube, mas sem vínculo com esta unidade.</p>
+      <form method="post" onsubmit="return confirm('Tem certeza? Esta ação não pode ser desfeita.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="delete" />
+        <label style="font-size:0.78rem;font-weight:700;color:#64748b;display:block;margin-bottom:0.35rem">Digite «{{ unit.name }}» para confirmar</label>
+        <input name="confirm_name" required placeholder="{{ unit.name }}" style="margin-bottom:0.75rem" />
+        <button type="submit" class="un-btn un-btn--danger">Excluir unidade</button>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

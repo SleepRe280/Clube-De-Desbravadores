@@ -1,0 +1,77 @@
+{% if cv %}
+<section class="act-class-hero">
+  <div class="act-class-hero__main">
+    <h2>{{ cv.name }}{% if cv.advanced_title %} <span class="act-class-hero__adv">+ {{ cv.advanced_title }}</span>{% endif %}</h2>
+    <p class="act-class-hero__meta">
+      {% if cv.min_age %}Idade mínima: {{ cv.min_age }} anos · {% endif %}
+      {{ cv.total_requirements }} requisitos · {{ cv.member_count }} desbravadores no clube
+    </p>
+    <div class="act-progress act-progress--lg" style="margin-top:0.75rem">
+      <span style="width:{{ cv.progress_percent if cv.member else 0 }}%;background:{{ cv.color_hex }}"></span>
+    </div>
+    <p class="act-class-hero__pct">{{ cv.progress_percent if cv.member else 0 }}% progresso{% if cv.member %} — {{ cv.member.full_name }}{% else %} da classe no clube{% endif %}</p>
+  </div>
+  <div class="act-class-hero__actions">
+    <a href="{{ url_for('admin.members', **admin_nav_kw) }}" class="act-btn act-btn--ghost act-btn--sm">Gerenciar classes</a>
+    {% if cv.member %}
+    <a href="{{ url_for('admin.admin_activities', classe=cv.slug, **admin_nav_kw) }}" class="act-btn act-btn--ghost act-btn--sm">Visão geral</a>
+    {% endif %}
+  </div>
+</section>
+
+<div class="act-accordion">
+  {% for sec in cv.sections %}
+  <details class="act-accordion__panel" {% if loop.first %}open{% endif %}>
+    <summary class="act-accordion__head">
+      <span class="act-accordion__title">{{ sec.code }}. {{ sec.title|upper }}</span>
+      <span class="act-accordion__meta">{{ sec.done }}/{{ sec.total }} · {{ sec.pct }}%</span>
+      <span class="act-progress act-progress--inline"><span style="width:{{ sec.pct }}%;background:{{ cv.color_hex }}"></span></span>
+    </summary>
+    <div class="act-req-table-wrap">
+      <table class="act-req-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Requisito</th>
+            <th>Status</th>
+            <th>Conclusão</th>
+            <th>Visto instrutor</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in sec.requirements %}
+          <tr>
+            <td><span class="act-req-num">{{ req.number_label }}</span></td>
+            <td>
+              <strong>{{ req.title }}</strong>
+              {% if req.is_optional %}<span class="act-tag act-tag--opt">Opcional</span>{% endif %}
+              {% if req.description %}<p class="act-req-desc">{{ req.description }}</p>{% endif %}
+            </td>
+            <td>
+              <span class="act-status act-status--{% if req.status == 'completed' %}green{% elif req.status == 'pending_review' %}blue{% elif req.status == 'in_progress' %}amber{% elif req.status == 'rejected' %}red{% elif req.status == 'revision' %}purple{% else %}muted{% endif %}">{{ req.status_label }}</span>
+            </td>
+            <td>{% if req.completion_date %}{{ req.completion_date.strftime('%d/%m/%Y') }}{% else %}—{% endif %}</td>
+            <td>{% if req.instructor_signed %}✓ {{ req.approver or 'Instrutor' }}{% else %}—{% endif %}</td>
+            <td>
+              {% if req.progress_id %}
+              <form method="post" action="{{ url_for('admin.activities_requirement_status', progress_id=req.progress_id, **admin_nav_kw) }}" class="act-req-actions act-req-actions--table" data-act-req-form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" name="status" value="pending_review" title="Enviado">🔵</button>
+                <button type="submit" name="status" value="completed" title="Aprovar">✅</button>
+                <button type="submit" name="status" value="revision" title="Correção">↩</button>
+                <button type="submit" name="status" value="rejected" title="Reprovar">❌</button>
+              </form>
+              {% else %}
+              <span class="text-xs text-slate-400">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endfor %}
+</div>
+{% endif %}
