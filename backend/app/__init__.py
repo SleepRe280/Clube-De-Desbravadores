@@ -31,6 +31,59 @@ def _configure_sqlite_engine(app) -> None:
         app.logger.warning("SQLite PRAGMA: %s", exc)
 
 
+def _upsert_director_admin(email: str, password: str, full_name: str = "Diretoria do Clube") -> str:
+    """Cria ou promove conta de diretor de clube (cargo diretor + clube padrão)."""
+    from app.models import CARGO_DIRETOR, Club, Profile, User
+
+    email = email.strip().lower()
+    full_name = (full_name or "").strip() or "Diretoria do Clube"
+    u = User.query.filter_by(email=email).first()
+    if u:
+        u.role = "admin"
+        u.email_verified = True
+        u.full_name = full_name or u.full_name
+        u.set_password(password)
+    else:
+        u = User(
+            email=email,
+            role="admin",
+            full_name=full_name or "Admin",
+            email_verified=True,
+        )
+        u.set_password(password)
+        db.session.add(u)
+        db.session.flush()
+    profile = db.session.get(Profile, u.id) if u.id else None
+    if not profile:
+        profile = Profile(id=u.id)
+        db.session.add(profile)
+    profile.cargo = CARGO_DIRETOR
+    profile.cargos_json = json.dumps([CARGO_DIRETOR])
+    profile.nome_completo = full_name or u.full_name
+    profile.email_verificado = True
+    if not profile.clube_id:
+        default_club = Club.query.filter_by(template_slug="duque_de_caxias").first()
+        if default_club:
+            profile.clube_id = default_club.id
+    db.session.commit()
+    return email
+
+
+def _ensure_bootstrap_director(app) -> None:
+    """Render free tier não tem Shell — use DIRECTOR_ADMIN_* no Environment."""
+    email = os.environ.get("DIRECTOR_ADMIN_EMAIL", "").strip().lower()
+    password = os.environ.get("DIRECTOR_ADMIN_PASSWORD", "").strip()
+    if not email or not password:
+        return
+    full_name = os.environ.get("DIRECTOR_ADMIN_FULL_NAME", "").strip() or "Diretoria do Clube"
+    configured = _upsert_director_admin(email, password, full_name)
+    app.logger.info(
+        "Conta de diretoria configurada via DIRECTOR_ADMIN_*: %s "
+        "(remova DIRECTOR_ADMIN_PASSWORD do Environment após o primeiro login)",
+        configured,
+    )
+
+
 def _initialize_database(app):
     """Cria tabelas e migrações; não impede o servidor de subir se o SQLite estiver bloqueado."""
     try:
@@ -70,6 +123,7 @@ def _initialize_database(app):
             ensure_leadership_accounts_admin_role(app)
             normalize_profile_roles(app)
             _ensure_master_admin(app)
+            _ensure_bootstrap_director(app)
     except Exception as exc:
         app.logger.exception(
             "Falha na inicialização do banco (%s). O site pode abrir com funcionalidades "
@@ -394,39 +448,8 @@ def create_app(config_class=Config):
     @click.option("--full-name", default="Diretoria do Clube", show_default=True)
     def create_admin_command(email, password, full_name):
         """Cria ou promove conta de diretoria (use no Render após o primeiro deploy)."""
-        from app.models import CARGO_DIRETOR, Club, Profile, User
-
-        email = email.strip().lower()
-        u = User.query.filter_by(email=email).first()
-        if u:
-            u.role = "admin"
-            u.email_verified = True
-            u.full_name = full_name.strip() or u.full_name
-            u.set_password(password)
-        else:
-            u = User(
-                email=email,
-                role="admin",
-                full_name=full_name.strip() or "Admin",
-                email_verified=True,
-            )
-            u.set_password(password)
-            db.session.add(u)
-            db.session.flush()
-        profile = db.session.get(Profile, u.id) if u.id else None
-        if not profile:
-            profile = Profile(id=u.id)
-            db.session.add(profile)
-        profile.cargo = CARGO_DIRETOR
-        profile.cargos_json = json.dumps([CARGO_DIRETOR])
-        profile.nome_completo = full_name.strip() or u.full_name
-        profile.email_verificado = True
-        if not profile.clube_id:
-            default_club = Club.query.filter_by(template_slug="duque_de_caxias").first()
-            if default_club:
-                profile.clube_id = default_club.id
-        db.session.commit()
-        click.echo(f"Conta de diretoria configurada: {email}")
+        configured = _upsert_director_admin(email, password, full_name)
+        click.echo(f"Conta de diretoria configurada: {configured}")
 
     @app.cli.command("create-master-admin")
     @click.argument("email")

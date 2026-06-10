@@ -4,6 +4,10 @@
 # E-mail (opcional no painel Environment): MAIL_SERVER, MAIL_PORT (587), MAIL_USE_TLS=1,
 # MAIL_USE_SSL=0, MAIL_USERNAME, MAIL_PASSWORD, MAIL_DEFAULT_SENDER — necessário para
 # recuperação de senha por e-mail em produção (cadastro de responsáveis é imediato).
+#
+# Primeiro diretor (plano free não tem Shell): no Environment do web service, adicione
+# DIRECTOR_ADMIN_EMAIL, DIRECTOR_ADMIN_PASSWORD e opcional DIRECTOR_ADMIN_FULL_NAME;
+# faça deploy, entre em /login e remova DIRECTOR_ADMIN_PASSWORD.
 
 databases:
   - name: Desbravadores
