@@ -51,6 +51,10 @@ def parent_phone_for_user(user: User) -> str | None:
 
 
 def account_status(user: User, *, clube_id: str | None = None) -> str:
+    from app.email_verification_service import email_verification_required
+
+    if email_verification_required() and not user.email_verified:
+        return "pendente"
     kids = children_for_parent(user.id)
     if clube_id:
         kids = [k for k in kids if k.clube_id == clube_id]
@@ -85,13 +89,15 @@ def parents_metrics(clube_id: str | None) -> dict:
         hist_q = hist_q.filter(ParentLinkHistory.clube_id == clube_id)
     links_month = hist_q.count()
 
-    # Contas sem filhos vinculados
+    from app.email_verification_service import email_verification_required
+
+    verify = email_verification_required()
     n_pending = 0
     for p in parent_users:
         kids = children_for_parent(p.id)
         if clube_id:
             kids = [k for k in kids if k.clube_id == clube_id]
-        if not kids:
+        if (verify and not p.email_verified) or not kids:
             n_pending += 1
 
     return {

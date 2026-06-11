@@ -1,9 +1,9 @@
 # Blueprint Render: https://render.com/docs/blueprint-spec
 # Ajuste `name` dos serviços se quiser outros identificadores no painel.
 #
-# E-mail (opcional no painel Environment): MAIL_SERVER, MAIL_PORT (587), MAIL_USE_TLS=1,
-# MAIL_USE_SSL=0, MAIL_USERNAME, MAIL_PASSWORD, MAIL_DEFAULT_SENDER — necessário para
-# recuperação de senha por e-mail em produção (cadastro de responsáveis é imediato).
+# E-mail — Gmail SMTP (sleepre07@gmail.com). No painel Environment, adicione só:
+#   MAIL_PASSWORD = senha de app do Google (https://myaccount.google.com/apppasswords)
+# Verificação no cadastro (opcional): EMAIL_VERIFICATION_REQUIRED=1
 #
 # Primeiro diretor (plano free não tem Shell): no Environment do web service, adicione
 # DIRECTOR_ADMIN_EMAIL, DIRECTOR_ADMIN_PASSWORD e opcional DIRECTOR_ADMIN_FULL_NAME;
@@ -39,3 +39,13 @@ services:
         fromDatabase:
           name: Desbravadores
           property: connectionString
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USE_TLS
+        value: "1"
+      - key: MAIL_USERNAME
+        value: sleepre07@gmail.com
+      - key: MAIL_DEFAULT_SENDER
+        value: "Clube de Desbravadores <sleepre07@gmail.com>"

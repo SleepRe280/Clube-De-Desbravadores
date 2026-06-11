@@ -103,6 +103,7 @@ def _initialize_database(app):
                 merge_club_news_into_board_posts,
                 migrate_sqlite_schema,
                 normalize_profile_roles,
+                ensure_email_verification_tokens_table,
                 ensure_users_email_verified_column,
                 mark_all_emails_verified,
             )
@@ -110,7 +111,9 @@ def _initialize_database(app):
             migrate_sqlite_schema(app)
             ensure_parent_link_schema(app)
             ensure_users_email_verified_column(app)
-            mark_all_emails_verified(app)
+            ensure_email_verification_tokens_table(app)
+            if not app.config.get("EMAIL_VERIFICATION_REQUIRED"):
+                mark_all_emails_verified(app)
             ensure_multiclub_scope_columns(app)
             ensure_leadership_premium_schema(app)
             ensure_specialties_schema(app)

@@ -7,6 +7,15 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from app.access import route_for_user
 from app.email_util import send_simple_email
+from app.email_verification_service import (
+    confirm_verification_token,
+    email_verification_required,
+    issue_verification_token,
+    login_verification_message,
+    registration_success_message,
+    send_verification_email,
+    user_blocks_login_until_verified,
+)
 from app.extensions import db, limiter
 from app.models import (
     CARGO_CONSELHEIRO,
@@ -214,7 +223,7 @@ def _ensure_profile_for_user(user: User, clube_id: str | None = None, cargo: str
         profile.cargos_json = json.dumps([cargo])
     elif not profile.cargos_json and profile.cargo:
         profile.cargos_json = json.dumps([profile.cargo])
-    profile.email_verificado = True
+    profile.email_verificado = bool(user.email_verified) if email_verification_required() else True
     return profile
 
 
@@ -253,6 +262,13 @@ def login():
         password = request.form.get("password") or ""
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
+            if user_blocks_login_until_verified(user):
+                flash(login_verification_message(), "warning")
+                return render_template(
+                    "auth/login.html",
+                    next_url=_login_next_url(),
+                    login_brand_img=url_for("static", filename=LOGIN_BRAND_STATIC),
+                )
             profile = _ensure_profile_for_user(user)
             if not profile.cargo:
                 profile.cargo = CARGO_DIRETOR if user.is_admin() else CARGO_PAI
@@ -440,19 +456,31 @@ def register():
             )
             return redirect(url_for("auth.login"))
 
+        verify = email_verification_required()
         user = User(
-            email=email, role="parent", full_name=full_name, email_verified=True
+            email=email,
+            role="parent",
+            full_name=full_name,
+            email_verified=not verify,
         )
         user.set_password(password)
         db.session.add(user)
         db.session.flush()
         _ensure_profile_for_user(user, clube_id=clube_id, cargo=CARGO_PAI)
-        db.session.commit()
-        flash(
-            "Conta criada com sucesso. Faça login e aguarde o diretor ou a secretaria "
-            "vincular seu filho em Responsáveis e vínculos.",
-            "success",
-        )
+        verification_sent = False
+        if verify:
+            token = issue_verification_token(user.id)
+            db.session.commit()
+            verification_sent = send_verification_email(user, token)
+            if not verification_sent and current_app.debug:
+                confirm_url = url_for("auth.confirm_email", token=token, _external=True)
+                flash(
+                    f"Desenvolvimento: abra este link para confirmar o e-mail — {confirm_url}",
+                    "info",
+                )
+        else:
+            db.session.commit()
+        flash(registration_success_message(verification_sent=verification_sent), "success")
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html", **_register_context())
@@ -465,7 +493,16 @@ def confirm_registration_code():
 
 @bp.route("/confirmar-email/<token>")
 def confirm_email(token):
-    flash("A confirmação por e-mail não é mais necessária. Faça login normalmente.", "info")
+    if not email_verification_required():
+        flash("A confirmação por e-mail não é necessária. Faça login normalmente.", "info")
+        return redirect(url_for("auth.login"))
+
+    user, err = confirm_verification_token(token)
+    if err:
+        flash(err, "danger")
+        return redirect(url_for("auth.login"))
+
+    flash("E-mail confirmado com sucesso. Faça login para continuar.", "success")
     return redirect(url_for("auth.login"))
 
 

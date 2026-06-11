@@ -62,6 +62,10 @@ _CONFIGURED_DATABASE_URI = _database_uri()
 DEV_SERVER_HOST_DEFAULT = "127.0.0.1"
 DEV_SERVER_PORT_DEFAULT = 5055
 
+# Gmail SMTP — remetente e conta padrão (senha só via MAIL_PASSWORD no Environment).
+DEFAULT_GMAIL_ADDRESS = "sleepre07@gmail.com"
+DEFAULT_EMAIL_SENDER = f"Clube de Desbravadores <{DEFAULT_GMAIL_ADDRESS}>"
+
 
 class Config:
     SECRET_KEY = (os.environ.get("SECRET_KEY") or "").strip() or "troque-esta-chave-em-producao"
@@ -83,11 +87,16 @@ class Config:
     URL_PREFIX = _url_prefix()
     WTF_CSRF_TIME_LIMIT = None
 
-    # E-mail (SMTP) — cadastro e recuperação de senha
-    MAIL_SERVER = os.environ.get("MAIL_SERVER", "").strip()
+    # E-mail — Gmail SMTP (padrão). Resend opcional se RESEND_API_KEY estiver definida.
+    EMAIL_VERIFICATION_REQUIRED = _env_flag("EMAIL_VERIFICATION_REQUIRED", default=False)
+
+    MAIL_SERVER = (os.environ.get("MAIL_SERVER") or "smtp.gmail.com").strip()
     MAIL_PORT = int(os.environ.get("MAIL_PORT") or "587")
     MAIL_USE_TLS = _env_flag("MAIL_USE_TLS", default=True)
     MAIL_USE_SSL = _env_flag("MAIL_USE_SSL", default=False)
-    MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "").strip()
+    MAIL_USERNAME = (os.environ.get("MAIL_USERNAME") or DEFAULT_GMAIL_ADDRESS).strip()
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "").strip()
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "").strip()
+    MAIL_DEFAULT_SENDER = (os.environ.get("MAIL_DEFAULT_SENDER") or DEFAULT_EMAIL_SENDER).strip()
+
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+    RESEND_FROM = (os.environ.get("RESEND_FROM") or DEFAULT_EMAIL_SENDER).strip()
