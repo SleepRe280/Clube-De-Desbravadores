@@ -61,7 +61,7 @@ class User(db.Model, UserMixin):
     role = db.Column(db.String(20), nullable=False)
     full_name = db.Column(db.String(120), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    email_verified = db.Column(db.Boolean, default=True, nullable=False)
     last_seen_at = db.Column(db.DateTime, nullable=True)
 
     children = db.relationship(
@@ -112,7 +112,7 @@ class Profile(db.Model):
     cargos_json = db.Column(db.Text, nullable=True)
     clube_id = db.Column(db.String(36), db.ForeignKey("clubes.id"), nullable=True, index=True)
     phone = db.Column(db.String(40), nullable=True)
-    email_verificado = db.Column(db.Boolean, default=False, nullable=False)
+    email_verificado = db.Column(db.Boolean, default=True, nullable=False)
     criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     user = db.relationship("User", backref=db.backref("perfil", uselist=False))

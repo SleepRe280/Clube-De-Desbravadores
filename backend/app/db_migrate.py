@@ -598,6 +598,22 @@ def ensure_email_verification_tokens_table(app):
         EmailVerificationToken.__table__.create(bind=engine, checkfirst=True)
 
 
+def mark_all_emails_verified(app):
+    """Confirma e-mail de contas legadas (verificação por link desativada)."""
+    from app.models import Profile, User
+
+    with app.app_context():
+        changed = False
+        for user in User.query.filter(User.email_verified.is_(False)).all():
+            user.email_verified = True
+            changed = True
+        for profile in Profile.query.filter(Profile.email_verificado.is_(False)).all():
+            profile.email_verificado = True
+            changed = True
+        if changed:
+            db.session.commit()
+
+
 def ensure_default_club_and_profiles(app):
     """
     Cria clube-base e backfill de perfis para usuários existentes.
@@ -655,7 +671,7 @@ def ensure_default_club_and_profiles(app):
 
         if not profile.nome_completo:
             profile.nome_completo = user.full_name
-        profile.email_verificado = bool(user.email_verified)
+        profile.email_verificado = True
         if user.role == "admin" and profile.cargo not in (
             CARGO_SUPER_ADMIN,
             CARGO_DIRETOR,

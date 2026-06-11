@@ -183,7 +183,7 @@ def assign_director():
     profile.cargos_json = json.dumps([CARGO_DIRETOR])
     profile.clube_id = club.id
     profile.nome_completo = nome or user.full_name
-    profile.email_verificado = bool(user.email_verified)
+    profile.email_verificado = True
     user.role = "admin"
     db.session.commit()
 

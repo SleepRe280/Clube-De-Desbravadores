@@ -128,7 +128,7 @@ def delegate_role(clube_id):
         profile.cargo = roles[0]
     profile.cargos_json = json.dumps(sorted(set(roles)))
     profile.nome_completo = profile.nome_completo or user.full_name
-    profile.email_verificado = bool(user.email_verified)
+    profile.email_verificado = True
     user.role = "admin" if CARGO_DIRETOR in roles else "parent"
     db.session.commit()
     flash("Funções delegadas com sucesso.", "success")

@@ -694,7 +694,7 @@ def _link_leadership_account(account_email: str, full_name: str, perfil_cargo: s
     profile.cargo = perfil_cargo
     profile.cargos_json = json.dumps(sorted(roles))
     profile.nome_completo = (full_name or "").strip() or profile.nome_completo or user.full_name
-    profile.email_verificado = bool(user.email_verified)
+    profile.email_verificado = True
     leadership_roles = {CARGO_DIRETOR, CARGO_SECRETARIO, CARGO_TESOUREIRO, CARGO_CONSELHEIRO}
     user.role = "admin" if roles.intersection(leadership_roles) else "parent"
     if full_name and full_name.strip():
@@ -3468,7 +3468,7 @@ def _delegate_leadership_role(
     profile.clube_id = scope_club_id
     profile.cargo = new_role
     profile.cargos_json = json.dumps(sorted(roles))
-    profile.email_verificado = bool(user.email_verified)
+    profile.email_verificado = True
     profile.nome_completo = profile.nome_completo or user.full_name
     user.role = "admin" if new_role in {CARGO_DIRETOR, CARGO_SECRETARIO, CARGO_TESOUREIRO} else "parent"
 

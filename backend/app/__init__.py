@@ -104,13 +104,13 @@ def _initialize_database(app):
                 migrate_sqlite_schema,
                 normalize_profile_roles,
                 ensure_users_email_verified_column,
-                ensure_email_verification_tokens_table,
+                mark_all_emails_verified,
             )
 
             migrate_sqlite_schema(app)
             ensure_parent_link_schema(app)
             ensure_users_email_verified_column(app)
-            ensure_email_verification_tokens_table(app)
+            mark_all_emails_verified(app)
             ensure_multiclub_scope_columns(app)
             ensure_leadership_premium_schema(app)
             ensure_specialties_schema(app)
@@ -545,5 +545,5 @@ def _ensure_master_admin(app):
             db.session.add(legacy_profile)
         legacy_profile.cargo = CARGO_PAI
         legacy_profile.cargos_json = json.dumps([CARGO_PAI])
-        legacy_profile.email_verificado = bool(legacy.email_verified)
+        legacy_profile.email_verificado = True
     db.session.commit()

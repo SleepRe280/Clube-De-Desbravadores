@@ -50,10 +50,11 @@ def parent_phone_for_user(user: User) -> str | None:
     return None
 
 
-def account_status(user: User) -> str:
-    if not user.email_verified:
-        return "pendente"
-    return "ativo"
+def account_status(user: User, *, clube_id: str | None = None) -> str:
+    kids = children_for_parent(user.id)
+    if clube_id:
+        kids = [k for k in kids if k.clube_id == clube_id]
+    return "ativo" if kids else "pendente"
 
 
 def parents_metrics(clube_id: str | None) -> dict:
@@ -84,13 +85,13 @@ def parents_metrics(clube_id: str | None) -> dict:
         hist_q = hist_q.filter(ParentLinkHistory.clube_id == clube_id)
     links_month = hist_q.count()
 
-    # Contas sem filhos ou e-mail não verificado
+    # Contas sem filhos vinculados
     n_pending = 0
     for p in parent_users:
         kids = children_for_parent(p.id)
         if clube_id:
             kids = [k for k in kids if k.clube_id == clube_id]
-        if not kids or not p.email_verified:
+        if not kids:
             n_pending += 1
 
     return {
@@ -106,7 +107,7 @@ def serialize_parent_row(user: User, clube_id: str | None) -> dict:
     if clube_id:
         kids = [k for k in kids if k.clube_id == clube_id]
     phone = parent_phone_for_user(user)
-    status = account_status(user)
+    status = account_status(user, clube_id=clube_id)
     return {
         "user": user,
         "children": kids,
@@ -164,7 +165,7 @@ def search_parents(clube_id: str | None, query: str, *, limit: int = 12) -> list
                 "email": user.email,
                 "initials": initials_for(user.full_name or user.email),
                 "n_children": len(kids),
-                "status": account_status(user),
+                "status": account_status(user, clube_id=clube_id),
             }
         )
         if len(rows) >= limit:

@@ -17,7 +17,6 @@ from app.models import (
     CARGO_TESOUREIRO,
     Club,
     DirectorateMember,
-    EmailVerificationToken,
     PasswordResetToken,
     Profile,
     User,
@@ -215,7 +214,7 @@ def _ensure_profile_for_user(user: User, clube_id: str | None = None, cargo: str
         profile.cargos_json = json.dumps([cargo])
     elif not profile.cargos_json and profile.cargo:
         profile.cargos_json = json.dumps([profile.cargo])
-    profile.email_verificado = bool(user.email_verified)
+    profile.email_verificado = True
     return profile
 
 
@@ -254,17 +253,6 @@ def login():
         password = request.form.get("password") or ""
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
-            if not user.email_verified:
-                flash(
-                    "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada "
-                    "ou solicite um novo link ao clube.",
-                    "warning",
-                )
-                return render_template(
-                    "auth/login.html",
-                    next_url=_login_next_url(),
-                    login_brand_img=url_for("static", filename=LOGIN_BRAND_STATIC),
-                )
             profile = _ensure_profile_for_user(user)
             if not profile.cargo:
                 profile.cargo = CARGO_DIRETOR if user.is_admin() else CARGO_PAI
@@ -453,38 +441,16 @@ def register():
             return redirect(url_for("auth.login"))
 
         user = User(
-            email=email, role="parent", full_name=full_name, email_verified=False
+            email=email, role="parent", full_name=full_name, email_verified=True
         )
         user.set_password(password)
         db.session.add(user)
         db.session.flush()
         _ensure_profile_for_user(user, clube_id=clube_id, cargo=CARGO_PAI)
-        EmailVerificationToken.query.filter_by(user_id=user.id).delete()
-        token = secrets.token_urlsafe(32)
-        row = EmailVerificationToken(
-            user_id=user.id,
-            token=token,
-            expires_at=datetime.utcnow() + timedelta(hours=48),
-        )
-        db.session.add(row)
         db.session.commit()
-        confirm_url = url_for("auth.confirm_email", token=token, _external=True)
-        body = (
-            f"Olá, {full_name}!\n\n"
-            f"Para confirmar seu cadastro no portal do clube, acesse:\n{confirm_url}\n\n"
-            "O link expira em 48 horas.\n"
-        )
-        sent = send_simple_email(
-            user.email, "Confirme seu e-mail — Portal do clube", body
-        )
-        if not sent and current_app.debug:
-            flash(
-                f"Desenvolvimento: abra este link para confirmar o e-mail — {confirm_url}",
-                "info",
-            )
         flash(
-            "Conta criada. Verifique seu e-mail para confirmar o cadastro antes de fazer login. "
-            "Depois, aguarde o diretor ou a secretaria vincular seu filho em Responsáveis e vínculos.",
+            "Conta criada com sucesso. Faça login e aguarde o diretor ou a secretaria "
+            "vincular seu filho em Responsáveis e vínculos.",
             "success",
         )
         return redirect(url_for("auth.login"))
@@ -499,23 +465,7 @@ def confirm_registration_code():
 
 @bp.route("/confirmar-email/<token>")
 def confirm_email(token):
-    row = EmailVerificationToken.query.filter_by(token=token).first()
-    if not row or row.expires_at < datetime.utcnow():
-        flash("Link inválido ou expirado. Faça um novo cadastro ou procure o clube.", "danger")
-        return redirect(url_for("auth.login"))
-
-    user = db.session.get(User, row.user_id)
-    if not user:
-        flash("Conta inválida.", "danger")
-        return redirect(url_for("auth.login"))
-
-    user.email_verified = True
-    profile = db.session.get(Profile, user.id)
-    if profile:
-        profile.email_verificado = True
-    db.session.delete(row)
-    db.session.commit()
-    flash("E-mail confirmado com sucesso. Faça login para continuar.", "success")
+    flash("A confirmação por e-mail não é mais necessária. Faça login normalmente.", "info")
     return redirect(url_for("auth.login"))
 
 
