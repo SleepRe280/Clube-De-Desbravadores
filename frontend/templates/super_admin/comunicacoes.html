@@ -1,0 +1,46 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Comunicações{% endblock %}
+
+{% block greeting %}
+<h1>Comunicações Globais</h1>
+<p>Visão geral das publicações e comunicados em todos os clubes.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-stats sa-section">
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ comm_stats.total }}</div>
+    <div class="sa-stat-card__label">Total de publicações</div>
+  </div>
+  {% for kind, count in comm_stats.by_kind.items() %}
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ count }}</div>
+    <div class="sa-stat-card__label">{{ kind | capitalize }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="sa-card">
+  <h3 class="sa-card__title">Publicações recentes</h3>
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead>
+        <tr><th>Título</th><th>Tipo</th><th>Categoria</th><th>Data</th></tr>
+      </thead>
+      <tbody>
+        {% for post in comm_stats.recent %}
+        <tr>
+          <td class="font-semibold">{{ post.title }}</td>
+          <td><span class="sa-badge sa-badge--info">{{ post.post_kind }}</span></td>
+          <td>{{ post.category or '—' }}</td>
+          <td>{{ post.created_at.strftime('%d/%m/%Y') if post.created_at else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="sa-empty">Nenhuma publicação ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-sm text-slate-500 mt-4">Para gerenciar comunicações de um clube, acesse o painel administrativo do clube em <a href="{{ url_for('super_admin.clubes') }}" class="text-blue-800 font-semibold">Clubes</a>.</p>
+</div>
+{% endblock %}

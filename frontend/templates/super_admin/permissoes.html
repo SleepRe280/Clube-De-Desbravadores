@@ -1,0 +1,51 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Permissões{% endblock %}
+
+{% block greeting %}
+<h1>Permissões e Cargos</h1>
+<p>Visão geral do sistema de cargos e permissões da plataforma.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-grid-2 sa-section">
+  <div class="sa-card">
+    <h3 class="sa-card__title">Distribuição de cargos</h3>
+    <div class="space-y-3">
+      {% for role in roles %}
+      <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50">
+        <span class="font-semibold text-sm">{{ role.label }}</span>
+        <span class="sa-badge sa-badge--info">{{ role.count }}</span>
+      </div>
+      {% else %}
+      <p class="sa-empty">Sem dados de cargos.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="sa-card">
+    <h3 class="sa-card__title">Hierarquia de permissões</h3>
+    <div class="text-sm text-slate-600 space-y-3">
+      <div class="p-3 rounded-lg border-l-4" style="border-color:#003580;background:#eff6ff">
+        <strong>Super Admin</strong> — acesso global, cria clubes, promove diretores
+      </div>
+      <div class="p-3 rounded-lg border-l-4" style="border-color:#FFD700;background:#fffbeb">
+        <strong>Diretor</strong> — gestão completa do clube vinculado
+      </div>
+      <div class="p-3 rounded-lg border-l-4" style="border-color:#0d47a1;background:#eff6ff">
+        <strong>Tesoureiro / Secretário / Conselheiro</strong> — funções delegadas pela diretoria
+      </div>
+      <div class="p-3 rounded-lg border-l-4" style="border-color:#64748b;background:#f8fafc">
+        <strong>Responsável</strong> — portal da família, acesso aos filhos vinculados
+      </div>
+    </div>
+  </div>
+</div>
+<div class="sa-card">
+  <h3 class="sa-card__title">Regras importantes</h3>
+  <ul class="text-sm text-slate-600 space-y-2 list-disc pl-5">
+    <li>Apenas o Super Admin pode promover usuários ao cargo de <strong>Diretor</strong></li>
+    <li>Diretores podem delegar tesoureiro, secretário e conselheiro dentro do seu clube</li>
+    <li>Cada usuário pode estar vinculado a um clube via perfil</li>
+    <li>Permissões granulares são configuradas na diretoria de cada clube em <a href="{{ url_for('super_admin.clubes') }}" class="text-blue-800 font-semibold">/admin/diretoria</a></li>
+  </ul>
+</div>
+{% endblock %}

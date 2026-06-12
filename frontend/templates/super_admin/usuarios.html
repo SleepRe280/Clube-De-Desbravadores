@@ -1,0 +1,84 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Usuários{% endblock %}
+
+{% block greeting %}
+<h1>Usuários Globais</h1>
+<p>Gerenciamento centralizado de todas as contas da plataforma.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-card sa-section">
+  <form method="get" action="{{ url_for('super_admin.usuarios') }}" class="sa-filter-bar">
+    <div>
+      <label class="sa-label">Buscar</label>
+      <input name="q" value="{{ search }}" placeholder="Nome ou e-mail" class="sa-input" />
+    </div>
+    <div>
+      <label class="sa-label">Tipo</label>
+      <select name="cargo" class="sa-input">
+        <option value="">Todos</option>
+        <option value="super_admin" {% if cargo_filter == 'super_admin' %}selected{% endif %}>Super Admin</option>
+        <option value="diretor" {% if cargo_filter == 'diretor' %}selected{% endif %}>Diretor</option>
+        <option value="pai" {% if cargo_filter == 'pai' %}selected{% endif %}>Responsável</option>
+        <option value="tesoureiro" {% if cargo_filter == 'tesoureiro' %}selected{% endif %}>Tesoureiro</option>
+        <option value="secretario" {% if cargo_filter == 'secretario' %}selected{% endif %}>Secretário</option>
+        <option value="conselheiro" {% if cargo_filter == 'conselheiro' %}selected{% endif %}>Conselheiro</option>
+      </select>
+    </div>
+    <div>
+      <label class="sa-label">Clube</label>
+      <select name="clube_id" class="sa-input">
+        <option value="">Todos</option>
+        {% for c in clubs %}
+        <option value="{{ c.id }}" {% if selected_club_id == c.id %}selected{% endif %}>{{ c.nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="sa-btn sa-btn--primary">Filtrar</button>
+    <a href="{{ url_for('super_admin.usuarios') }}" class="sa-btn sa-btn--outline">Limpar</a>
+  </form>
+
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Tipo</th>
+          <th>Clube</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in users_data %}
+        {% set u = row.user %}
+        <tr>
+          <td class="font-semibold">{{ u.full_name or '—' }}</td>
+          <td>{{ u.email }}</td>
+          <td><span class="sa-badge sa-badge--info">{{ row.cargo_label }}</span></td>
+          <td>{{ row.club.nome if row.club else '—' }}</td>
+          <td><span class="sa-badge sa-badge--{{ row.status_class }}">{{ row.status }}</span></td>
+          <td>
+            <div class="sa-actions">
+              {% if row.profile and row.profile.cargo == 'diretor' and row.club %}
+              <form method="post" action="{{ url_for('super_admin.enter_as_director', user_id=u.id) }}">
+                <button type="submit" class="sa-btn sa-btn--primary sa-btn--sm">Entrar como admin</button>
+              </form>
+              {% elif row.club %}
+              <a href="{{ url_for('admin.dashboard', clube_id=row.club.id) }}" class="sa-btn sa-btn--outline sa-btn--sm">Ver clube</a>
+              {% endif %}
+              {% if row.profile and row.profile.cargo == 'diretor' %}
+              <a href="{{ url_for('super_admin.diretores') }}?q={{ u.email }}" class="sa-btn sa-btn--outline sa-btn--sm">Gerenciar</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="sa-empty">Nenhum usuário encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

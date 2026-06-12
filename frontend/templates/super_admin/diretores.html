@@ -1,0 +1,130 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Diretores{% endblock %}
+
+{% block greeting %}
+<h1>Gerenciamento de Diretores</h1>
+<p>Promova usuários existentes a diretores e vincule-os a clubes.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-grid-2 sa-section">
+  <div class="sa-card">
+    <h3 class="sa-card__title">Vincular diretor existente</h3>
+    <p class="text-sm text-slate-600 mb-4">Selecione uma conta de usuário já cadastrada, promova para Diretor e vincule a um clube. As permissões administrativas serão concedidas automaticamente.</p>
+    <form method="post" action="{{ url_for('super_admin.assign_director') }}" class="sa-form-grid">
+      <div>
+        <label class="sa-label">E-mail do usuário *</label>
+        <input name="email" type="email" required class="sa-input" placeholder="usuario@email.com" />
+      </div>
+      <div>
+        <label class="sa-label">Nome completo (opcional)</label>
+        <input name="nome_completo" class="sa-input" placeholder="Atualiza o nome se informado" />
+      </div>
+      <div>
+        <label class="sa-label">Clube *</label>
+        <select name="clube_id" required class="sa-input">
+          <option value="">Selecione o clube</option>
+          {% for c in clubs %}
+          <option value="{{ c.id }}">{{ c.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="sa-btn sa-btn--gold">Vincular diretor</button>
+    </form>
+  </div>
+
+  <div class="sa-card">
+    <h3 class="sa-card__title">Como funciona</h3>
+    <ul class="text-sm text-slate-600 space-y-2 list-disc pl-5">
+      <li>O usuário deve ter conta criada em <strong>/cadastro</strong></li>
+      <li>Ao vincular, recebe cargo <strong>Diretor</strong> no clube</li>
+      <li>Permissões administrativas são ativadas automaticamente</li>
+      <li>Use <strong>Entrar como admin</strong> para acessar o painel do clube</li>
+    </ul>
+  </div>
+</div>
+
+<div class="sa-card sa-section">
+  <h3 class="sa-card__title">Diretores cadastrados</h3>
+  <form method="get" action="{{ url_for('super_admin.diretores') }}" class="sa-filter-bar">
+    <div>
+      <label class="sa-label">Clube</label>
+      <select name="clube_id" class="sa-input">
+        <option value="">Todos os clubes</option>
+        {% for c in clubs %}
+        <option value="{{ c.id }}" {% if selected_club_id == c.id %}selected{% endif %}>{{ c.nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="sa-label">Buscar</label>
+      <input name="q" value="{{ search }}" placeholder="Nome ou e-mail" class="sa-input" />
+    </div>
+    <button type="submit" class="sa-btn sa-btn--primary">Filtrar</button>
+    <a href="{{ url_for('super_admin.diretores') }}" class="sa-btn sa-btn--outline">Limpar</a>
+  </form>
+
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Clube</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dir_user, profile, club in directors %}
+        <tr>
+          <td class="font-semibold">{{ dir_user.full_name or 'Diretor' }}</td>
+          <td>{{ dir_user.email }}</td>
+          <td>{{ club.nome if club else 'Não vinculado' }}</td>
+          <td>
+            <div class="sa-actions">
+              <form method="post" action="{{ url_for('super_admin.enter_as_director', user_id=dir_user.id) }}">
+                <button type="submit" class="sa-btn sa-btn--primary sa-btn--sm">Entrar como admin</button>
+              </form>
+              <form method="post" action="{{ url_for('super_admin.remove_director', user_id=dir_user.id) }}" data-sa-confirm="Desvincular este diretor? A conta volta a ser apenas de responsável.">
+                <button type="submit" class="sa-btn sa-btn--outline sa-btn--sm">Desvincular</button>
+              </form>
+              <form method="post" action="{{ url_for('super_admin.delete_director_account', user_id=dir_user.id) }}" data-sa-confirm="Excluir esta conta permanentemente? Só é possível se não houver filhos ou publicações vinculadas.">
+                <button type="submit" class="sa-btn sa-btn--danger sa-btn--sm">Excluir conta</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="4">
+            <details class="sa-details">
+              <summary>Editar diretor — {{ dir_user.full_name or dir_user.email }}</summary>
+              <div class="sa-panel">
+                <form method="post" action="{{ url_for('super_admin.update_director', user_id=dir_user.id) }}" class="sa-form-grid sa-form-grid--2" style="display:grid">
+                  <div>
+                    <label class="sa-label">Nome completo</label>
+                    <input name="nome_completo" value="{{ dir_user.full_name or '' }}" class="sa-input" />
+                  </div>
+                  <div>
+                    <label class="sa-label">Clube</label>
+                    <select name="clube_id" required class="sa-input">
+                      {% for c in clubs %}
+                      <option value="{{ c.id }}" {% if club and club.id == c.id %}selected{% endif %}>{{ c.nome }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div style="grid-column:1/-1">
+                    <button type="submit" class="sa-btn sa-btn--primary">Salvar alterações</button>
+                  </div>
+                </form>
+              </div>
+            </details>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="sa-empty">Nenhum diretor vinculado ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

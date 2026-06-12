@@ -1,0 +1,72 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Estatísticas{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block greeting %}
+<h1>Estatísticas da Plataforma</h1>
+<p>Métricas detalhadas de uso e crescimento.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-stats sa-section">
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ stats.clubes }}</div>
+    <div class="sa-stat-card__label">Clubes</div>
+  </div>
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ stats.users }}</div>
+    <div class="sa-stat-card__label">Usuários</div>
+  </div>
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ stats.desbravadores }}</div>
+    <div class="sa-stat-card__label">Desbravadores</div>
+  </div>
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ stats.n_posts }}</div>
+    <div class="sa-stat-card__label">Publicações</div>
+  </div>
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ stats.n_events }}</div>
+    <div class="sa-stat-card__label">Eventos</div>
+  </div>
+</div>
+
+<div class="sa-grid-2 sa-section">
+  <div class="sa-card">
+    <h3 class="sa-card__title">Crescimento de clubes (6 meses)</h3>
+    <div class="sa-chart-wrap">
+      <canvas id="sa-chart-growth" data-labels='{{ growth["labels"] | tojson }}' data-values='{{ growth["values"] | tojson }}'></canvas>
+    </div>
+  </div>
+  <div class="sa-card">
+    <h3 class="sa-card__title">Saúde dos clubes</h3>
+    <div class="sa-donut-wrap">
+      <canvas id="sa-chart-health"
+        data-excellent="{{ stats.health.excellent }}"
+        data-good="{{ stats.health.good }}"
+        data-attention="{{ stats.health.attention }}"
+        data-critical="{{ stats.health.critical }}"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="sa-card">
+  <h3 class="sa-card__title">Distribuição por cargo</h3>
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead><tr><th>Cargo</th><th>Quantidade</th></tr></thead>
+      <tbody>
+        {% for role in stats.roles %}
+        <tr>
+          <td>{{ role.label }}</td>
+          <td><strong>{{ role.count }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

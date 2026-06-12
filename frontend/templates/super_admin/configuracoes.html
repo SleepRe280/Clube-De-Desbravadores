@@ -1,0 +1,49 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Configurações{% endblock %}
+
+{% block greeting %}
+<h1>Configurações Globais</h1>
+<p>Parâmetros e informações do sistema.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-grid-2 sa-section">
+  <div class="sa-card">
+    <h3 class="sa-card__title">Identidade visual padrão</h3>
+    <div class="space-y-3">
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-lg" style="background:#003580"></span>
+        <span class="text-sm"><strong>Primária:</strong> #003580</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-lg" style="background:#FFD700"></span>
+        <span class="text-sm"><strong>Secundária:</strong> #FFD700</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="w-8 h-8 rounded-lg" style="background:#CC0000"></span>
+        <span class="text-sm"><strong>Destaque:</strong> #CC0000</span>
+      </div>
+    </div>
+    <p class="text-sm text-slate-500 mt-4">Cada clube pode personalizar suas cores em Clubes → Editar.</p>
+  </div>
+  <div class="sa-card">
+    <h3 class="sa-card__title">Informações do sistema</h3>
+    <dl class="text-sm space-y-2">
+      <div class="flex justify-between"><dt class="text-slate-500">Versão</dt><dd class="font-semibold">v2.6.0</dd></div>
+      <div class="flex justify-between"><dt class="text-slate-500">Clubes</dt><dd class="font-semibold">{{ counts.clubes }}</dd></div>
+      <div class="flex justify-between"><dt class="text-slate-500">Usuários</dt><dd class="font-semibold">{{ counts.users }}</dd></div>
+      <div class="flex justify-between"><dt class="text-slate-500">Conta atual</dt><dd class="font-semibold">{{ current_user.email }}</dd></div>
+    </dl>
+  </div>
+</div>
+
+<div class="sa-card">
+  <h3 class="sa-card__title">Ações rápidas</h3>
+  <div class="sa-actions">
+    <a href="{{ url_for('super_admin.clubes') }}" class="sa-btn sa-btn--primary">Gerenciar clubes</a>
+    <a href="{{ url_for('super_admin.diretores') }}" class="sa-btn sa-btn--gold">Gerenciar diretores</a>
+    <a href="{{ url_for('super_admin.usuarios') }}" class="sa-btn sa-btn--outline">Ver usuários</a>
+    <a href="{{ url_for('super_admin.logs') }}" class="sa-btn sa-btn--outline">Ver logs</a>
+  </div>
+</div>
+{% endblock %}

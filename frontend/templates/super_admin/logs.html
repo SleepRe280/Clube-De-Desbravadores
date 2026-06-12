@@ -1,0 +1,39 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Logs do Sistema{% endblock %}
+
+{% block greeting %}
+<h1>Histórico de Ações</h1>
+<p>Registro de alterações administrativas em todos os clubes.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-card">
+  <h3 class="sa-card__title">Logs administrativos</h3>
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Quem</th>
+          <th>Ação</th>
+          <th>Clube</th>
+          <th>Quando</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in audit_logs %}
+        <tr>
+          <td class="font-semibold">{{ log.who }}</td>
+          <td>{{ log.summary }}</td>
+          <td>{{ log.club_name }}</td>
+          <td>
+            <span title="{{ log.when }}">{{ log.ago }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="sa-empty">Nenhum log registrado ainda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

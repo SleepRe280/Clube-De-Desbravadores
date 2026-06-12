@@ -1,0 +1,60 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Backup e Segurança{% endblock %}
+
+{% block greeting %}
+<h1>Backup e Segurança</h1>
+<p>Informações sobre segurança e proteção de dados da plataforma.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-grid-2 sa-section">
+  <div class="sa-card">
+    <h3 class="sa-card__title">Segurança do sistema</h3>
+    <div class="sa-alerts">
+      <div class="sa-alert sa-alert--success">
+        <div>
+          <p class="sa-alert__title">Autenticação ativa</p>
+          <p class="sa-alert__detail">Sessões protegidas com Flask-Login e controle de cargos.</p>
+        </div>
+      </div>
+      <div class="sa-alert sa-alert--info">
+        <div>
+          <p class="sa-alert__title">CSRF Protection</p>
+          <p class="sa-alert__detail">Formulários protegidos contra requisições falsificadas.</p>
+        </div>
+      </div>
+      <div class="sa-alert sa-alert--info">
+        <div>
+          <p class="sa-alert__title">Multi-clube isolado</p>
+          <p class="sa-alert__detail">Cada clube opera com escopo independente de dados.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sa-card">
+    <h3 class="sa-card__title">Backup de dados</h3>
+    <p class="text-sm text-slate-600 mb-4">Em produção, o banco de dados PostgreSQL no Render realiza backups automáticos conforme o plano contratado.</p>
+    <ul class="text-sm text-slate-600 space-y-2 list-disc pl-5">
+      <li>Banco: PostgreSQL (Render)</li>
+      <li>Uploads: armazenados no servidor web</li>
+      <li>Recomendação: exportar dados periodicamente via painel Render</li>
+    </ul>
+  </div>
+</div>
+
+<div class="sa-card">
+  <h3 class="sa-card__title">Alertas de segurança</h3>
+  <div class="sa-alerts">
+    {% for alert in alerts %}
+    {% if alert.level in ['danger', 'warning'] %}
+    <div class="sa-alert sa-alert--{{ alert.level }}">
+      <div>
+        <p class="sa-alert__title">{{ alert.title }}</p>
+        <p class="sa-alert__detail">{{ alert.detail }}</p>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

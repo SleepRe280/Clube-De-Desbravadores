@@ -1,0 +1,39 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Templates{% endblock %}
+
+{% block greeting %}
+<h1>Templates de Clubes</h1>
+<p>Visualize os templates utilizados pelos clubes cadastrados.</p>
+{% endblock %}
+
+{% block content %}
+<div class="sa-stats sa-section" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+  {% for t in templates %}
+  <div class="sa-stat-card">
+    <div class="sa-stat-card__value">{{ t.count }}</div>
+    <div class="sa-stat-card__label">{{ t.slug }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="sa-card">
+  <h3 class="sa-card__title">Clubes por template</h3>
+  <div class="sa-table-wrap">
+    <table class="sa-table">
+      <thead>
+        <tr><th>Clube</th><th>Template</th><th>Cidade</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        {% for c in clubs %}
+        <tr>
+          <td class="font-semibold">{{ c.nome }}</td>
+          <td><span class="sa-badge sa-badge--info">{{ c.template_slug }}</span></td>
+          <td>{{ c.cidade or '—' }}</td>
+          <td><a href="{{ url_for('super_admin.clubes') }}" class="sa-btn sa-btn--outline sa-btn--sm">Editar</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
