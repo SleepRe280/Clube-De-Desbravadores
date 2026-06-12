@@ -87,7 +87,7 @@ class Config:
     URL_PREFIX = _url_prefix()
     WTF_CSRF_TIME_LIMIT = None
 
-    # E-mail — Gmail SMTP (padrão). Resend opcional se RESEND_API_KEY estiver definida.
+    # E-mail — Gmail SMTP
     EMAIL_VERIFICATION_REQUIRED = _env_flag("EMAIL_VERIFICATION_REQUIRED", default=False)
 
     MAIL_SERVER = (os.environ.get("MAIL_SERVER") or "smtp.gmail.com").strip()
@@ -97,6 +97,3 @@ class Config:
     MAIL_USERNAME = (os.environ.get("MAIL_USERNAME") or DEFAULT_GMAIL_ADDRESS).strip()
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "").strip()
     MAIL_DEFAULT_SENDER = (os.environ.get("MAIL_DEFAULT_SENDER") or DEFAULT_EMAIL_SENDER).strip()
-
-    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
-    RESEND_FROM = (os.environ.get("RESEND_FROM") or DEFAULT_EMAIL_SENDER).strip()

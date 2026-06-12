@@ -1,4 +1,4 @@
-"""Verificação de e-mail no cadastro (Gmail SMTP ou Resend).
+"""Verificação de e-mail no cadastro (Gmail SMTP).
 
 Ative em produção com:
   EMAIL_VERIFICATION_REQUIRED=1

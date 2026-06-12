@@ -9,4 +9,3 @@ gunicorn==23.0.0
 qrcode[pil]==7.4.2
 openpyxl==3.1.5
 psycopg2-binary==2.9.10
-resend==26.1.2
